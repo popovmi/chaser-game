@@ -19,7 +19,7 @@ dev_app:
 
 .PHONY: clean
 clean:
-	-rm -f ./build
+	-rm -rf ./build
 
 .PHONY: build_server
 build_server:

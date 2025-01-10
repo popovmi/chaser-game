@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	"image/color"
-	warsgame "wars/lib/game"
+
+	"wars/lib/game"
 )
 
 var (
@@ -21,6 +22,8 @@ var (
 	//go:embed assets/portal.png
 	portalBytes []byte
 )
+
+const faceLength = 30
 
 func (c *gameClient) createDefaultImages() {
 	background, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(bgBytes))
@@ -36,17 +39,12 @@ func (c *gameClient) createDefaultImages() {
 		panic(err)
 	}
 
-	invisiblePlayerImg := ebiten.NewImage(2*warsgame.Radius, 2*warsgame.Radius)
-	vector.DrawFilledCircle(
-		invisiblePlayerImg, warsgame.Radius, warsgame.Radius, warsgame.Radius, color.RGBA{}, true,
-	)
-
-	worldImg := ebiten.NewImage(warsgame.FieldWidth, warsgame.FieldHeight)
+	worldImg := ebiten.NewImage(game.FieldWidth, game.FieldHeight)
 	op := &ebiten.DrawImageOptions{}
 	op.ColorScale.ScaleAlpha(0.35)
 	worldImg.DrawImage(background, op)
 
-	portalRealLength := float64(2 * warsgame.PortalRadius)
+	portalRealLength := float64(2 * game.PortalRadius)
 	portalImageLength := float64(portal.Bounds().Dx())
 	portalScale := portalRealLength / portalImageLength
 	portalOp := &ebiten.DrawImageOptions{}
@@ -59,34 +57,43 @@ func (c *gameClient) createDefaultImages() {
 	brickOp.ColorScale.ScaleAlpha(0.70)
 	brickImg.DrawImage(brick, brickOp)
 
-	c.ui.worldImg = worldImg
-	c.ui.portalImg = portalImg
-	c.ui.brickImg = brickImg
-	c.ui.invisiblePlayerImg = invisiblePlayerImg
+	c.worldImg = worldImg
+	c.portalImg = portalImg
+	c.brickImg = brickImg
 }
 
-func (c *gameClient) createPlayerImages(p *warsgame.Player, clr color.RGBA) {
+func (c *gameClient) CreatePlayerImages(p *game.Player) {
+	w, h := 2*game.Radius, 2*game.Radius
 
-	nameStr := p.Name
-	if p.ID == c.id {
-		nameStr += " (you)"
-	}
-	textW, textH := text.Measure(nameStr, FontFaceBold18, warsgame.LineSpacing)
-	w, h := max(2*warsgame.Radius, textW), 2*warsgame.Radius+textH
+	baseImg := ebiten.NewImage(w, h)
+	vector.DrawFilledCircle(baseImg, float32(game.Radius), float32(game.Radius), game.Radius, p.Color.ToColorRGBA(),
+		true)
+	vector.StrokeLine(baseImg,
+		float32(game.Radius)+faceLength, float32(game.Radius),
+		float32(game.Radius), float32(game.Radius),
+		5, color.Black, true,
+	)
+	drawEyes(baseImg, float32(game.Radius), float32(game.Radius))
 
-	textOp := &text.DrawOptions{}
-	textOp.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
-	textOp.LineSpacing = warsgame.LineSpacing
-	textOp.GeoM.Translate(w/2-textW/2, 0)
-	iw, ih := int(w), int(h)
+	chaseImg := ebiten.NewImage(w, h)
+	vector.StrokeCircle(chaseImg, float32(game.Radius), float32(game.Radius), game.Radius-2, 3,
+		p.Color.ToColorRGBA(),
+		true)
+	vector.StrokeLine(chaseImg,
+		float32(game.Radius)+faceLength, float32(game.Radius),
+		float32(game.Radius), float32(game.Radius),
+		5, p.Color.ToColorRGBA(), true,
+	)
+	drawEyes(chaseImg, float32(game.Radius), float32(game.Radius))
 
-	baseImg := ebiten.NewImage(iw, ih)
-	vector.DrawFilledCircle(baseImg, float32(w/2), float32(warsgame.Radius+textH), warsgame.Radius, clr, true)
-	text.Draw(baseImg, nameStr, FontFaceBold18, textOp)
+	c.playerImages[p.ID] = &playerImg{baseImg, chaseImg}
+}
 
-	chaseImg := ebiten.NewImage(iw, ih)
-	vector.StrokeCircle(chaseImg, float32(w/2), float32(warsgame.Radius+textH), warsgame.Radius-5, 5, clr, true)
-	text.Draw(chaseImg, nameStr, FontFaceBold18, textOp)
-
-	c.ui.playerImgs[p.ID] = &playerImg{baseImg, chaseImg}
+func drawEyes(img *ebiten.Image, cx, cy float32) {
+	eyeRadius := float32(game.Radius) / 3.5
+	apRadius := float32(game.Radius) / 6.0
+	vector.DrawFilledCircle(img, cx, cy-eyeRadius, eyeRadius, color.White, true)
+	vector.DrawFilledCircle(img, cx, cy+eyeRadius, eyeRadius, color.White, true)
+	vector.DrawFilledCircle(img, cx, cy-eyeRadius*1.3, apRadius, color.Black, true)
+	vector.DrawFilledCircle(img, cx, cy+eyeRadius*1.3, apRadius, color.Black, true)
 }

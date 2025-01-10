@@ -46,9 +46,6 @@ func newGameSound(context *audio.Context, vol float64, source []byte) *gameSound
 }
 
 func (s *gameSound) play(pId string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	now := time.Now().UnixMilli()
 	if lastPlayed, ok := s.playsByPlayer[pId]; ok {
 		if now-lastPlayed < 750 {

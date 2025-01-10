@@ -1,4 +1,4 @@
-package color
+package colors
 
 var White = RGBA{255, 255, 255, 255}
 var Black = RGBA{0, 0, 0, 255}

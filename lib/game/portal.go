@@ -1,56 +1,56 @@
-package warsgame
+package game
 
 import (
 	"time"
+
 	"wars/lib/vector"
 )
 
 //go:generate msgp
 
 type Portal struct {
-	Pos *vector.Vect2D `msg:"pos"`
+	Pos vector.Vector2D `msg:"pos"`
 }
 
 func newPortal(x, y float64) *Portal {
-	return &Portal{Pos: &vector.Vect2D{X: x, Y: y}}
+	return &Portal{Pos: vector.Vector2D{X: x, Y: y}}
 }
 
 type PortalLink struct {
-	P1       *Portal          `msg:"p1"`
-	P2       *Portal          `msg:"p2"`
-	LastUsed map[string]int64 `msg:"LastUsed"`
+	P1       *Portal              `msg:"p1"`
+	P2       *Portal              `msg:"p2"`
+	LastUsed map[string]time.Time `msg:"lu"`
 }
 
 func NewPortalLink(x1, y1, x2, y2 float64) *PortalLink {
-	return &PortalLink{newPortal(x1, y1), newPortal(x2, y2), make(map[string]int64)}
+	return &PortalLink{newPortal(x1, y1), newPortal(x2, y2), make(map[string]time.Time)}
 }
 
 func (p *Portal) Touching(plr *Player) bool {
-	return p.Pos.Distance(plr.Pos) <= (PortalRadius - Radius)
+	return p.Pos.Distance(plr.Position) <= (PortalRadius - Radius)
 }
 
 func (p *PortalLink) Touching(plr *Player) bool {
 	return p.P1.Touching(plr) || p.P2.Touching(plr)
 }
 
-func (p *PortalLink) GetPortalUsage(plr *Player) (bool, int64) {
+func (p *PortalLink) GetPortalUsage(plr *Player) (bool, time.Time) {
 	touching := p.Touching(plr)
 	if !touching {
-		return false, 0
+		return false, time.Time{}
 	}
 
 	_, usedTimeAgo := p.IsLinkOnCooldown(plr)
 	return touching, usedTimeAgo
 }
 
-func (p *PortalLink) IsLinkOnCooldown(plr *Player) (bool, int64) {
-	now := time.Now().UnixMilli()
+func (p *PortalLink) IsLinkOnCooldown(plr *Player) (bool, time.Time) {
 	if lu, used := p.LastUsed[plr.ID]; used {
-		if now-lu < PortalCooldown {
+		if time.Since(lu).Seconds() < PortalCooldown {
 			return true, lu
 		}
 	}
-	return false, 0
+	return false, time.Time{}
 }
 
 func (p *PortalLink) CollideAndTeleport(plr *Player) bool {
@@ -63,7 +63,7 @@ func (p *PortalLink) CollideAndTeleport(plr *Player) bool {
 		ported = p.P2.CollideAndTeleport(plr, p.P1)
 	}
 	if ported {
-		p.LastUsed[plr.ID] = time.Now().UnixMilli()
+		p.LastUsed[plr.ID] = time.Now()
 	}
 	return ported
 }
@@ -73,8 +73,8 @@ func (p *Portal) CollideAndTeleport(plr *Player, dest *Portal) bool {
 		return false
 	}
 
-	plr.Pos.X = dest.Pos.X
-	plr.Pos.Y = dest.Pos.Y
+	plr.Position.X = dest.Pos.X
+	plr.Position.Y = dest.Pos.Y
 
 	return true
 }

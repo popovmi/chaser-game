@@ -5,12 +5,11 @@ import (
 	"net"
 	"sync"
 
-	"wars/app/components"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinylib/msgp/msgp"
 
-	warscolor "wars/lib/color"
+	"wars/app/components"
+	"wars/lib/colors"
 	"wars/lib/game"
 	"wars/lib/messages"
 )
@@ -38,63 +37,53 @@ type untouchableTimer struct {
 	visible bool
 }
 
-type gameUI struct {
-	windowW int
-	windowH int
+type gameClient struct {
+	clientID string
 
-	screen gameScreen
-
+	screen    gameScreen
 	nameInput *components.TextField
 
-	cameraX, cameraY float64
-
-	worldImg           *ebiten.Image
-	portalImg          *ebiten.Image
-	brickImg           *ebiten.Image
-	invisiblePlayerImg *ebiten.Image
-	playerImgs         map[string]*playerImg
-
-	untouchableTimers map[string]*untouchableTimer
-}
-
-type gameClient struct {
-	id string
-
-	game  *warsgame.Game
-	ui    *gameUI
+	game  *game.Game
 	audio *music
+
+	windowW          int
+	windowH          int
+	cameraX, cameraY float64
 
 	fps float64
 	tps float64
+
+	worldImg          *ebiten.Image
+	portalImg         *ebiten.Image
+	brickImg          *ebiten.Image
+	playerImages      map[string]*playerImg
+	untouchableTimers map[string]*untouchableTimer
 
 	tcpAddr string
 	udpAddr string
 	TCPConn net.Conn
 	UDPConn *net.UDPConn
-	ping    int
 
-	quit chan struct{}
-	mu   sync.Mutex
+	mu sync.Mutex
 }
 
 var tcpAddr, udpAddr string
 
 func main() {
 	msgp.RegisterExtension(98, func() msgp.Extension { return new(messages.MessageBody) })
-	msgp.RegisterExtension(99, func() msgp.Extension { return new(warscolor.RGBA) })
+	msgp.RegisterExtension(99, func() msgp.Extension { return new(colors.RGBA) })
 
-	InitFont()
+	LoadFonts()
+
 	c := &gameClient{
-		ui: &gameUI{
-			screen:            screenWait,
-			untouchableTimers: make(map[string]*untouchableTimer),
-			playerImgs:        make(map[string]*playerImg),
-		},
-		audio:   newGameMusic(),
-		tcpAddr: tcpAddr,
-		udpAddr: udpAddr,
-		quit:    make(chan struct{}),
+		audio:             newGameMusic(),
+		playerImages:      map[string]*playerImg{},
+		untouchableTimers: map[string]*untouchableTimer{},
+		screen:            screenWait,
+		tcpAddr:           tcpAddr,
+		udpAddr:           udpAddr,
 	}
+
 	c.createDefaultImages()
 
 	go c.openTCPConnection()
@@ -105,12 +94,10 @@ func main() {
 		}
 	}()
 
-	ebiten.SetWindowTitle("WARS")
+	ebiten.SetWindowTitle("Chaser")
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetTPS(warsgame.TPS)
 	ebiten.SetVsyncEnabled(true)
-
 	if err := ebiten.RunGame(c); err != nil {
 		log.Fatal(err)
 	}

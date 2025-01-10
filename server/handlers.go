@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net"
+	"strconv"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -43,7 +44,8 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 		return
 	}
 
-	c := &srvClient{Player: warsgame.NewPlayer(), ip: host, tcp: conn}
+	id := srv.game.Counter.Add(1)
+	c := &srvClient{Player: game.NewPlayer(strconv.FormatUint(id, 10)), ip: host, tcp: conn}
 	srv.clients[c.ID] = c
 
 	defer func() {
@@ -74,6 +76,10 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 
 func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 	switch msg.T {
+
+	case messages.ClMsgHello:
+		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
+
 	case messages.ClMsgJoinGame:
 		joinReq, err := messages.Unmarshal(&messages.JoinGameMsg{}, msg.B)
 		if err != nil {
@@ -119,23 +125,37 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 			slog.Error("could not marshal updates", err)
 			return err
 		}
-
 		srv.broadcastUDP(b)
-		c.ChangeDirection(moveReq.Dir)
+		c.HandleMove(moveReq.Dir)
 
-	case messages.ClMsgBrake:
-		brakedMsg := &messages.PlayerBrakedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerBraked, brakedMsg).MarshalMsg(nil)
+	case messages.ClMsgTurn:
+		turnReq, err := messages.Unmarshal(&messages.TurnMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+
+		turnedMsg := &messages.PlayerTurnedMsg{ID: c.ID, Dir: turnReq.Dir}
+		b, err := messages.New(messages.SrvMsgPlayerMoved, turnedMsg).MarshalMsg(nil)
 		if err != nil {
 			slog.Error("could not marshal updates", err)
 			return err
 		}
-
 		srv.broadcastUDP(b)
-		c.Brake()
+		c.HandleTurn(turnReq.Dir)
 
-	case messages.ClMsgHello:
-		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
+	case messages.ClMsgStrafe:
+		strafeReq, err := messages.Unmarshal(&messages.StrafeMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+		strafedMsg := &messages.PlayerStrafedMsg{ID: c.ID}
+		b, err := messages.New(messages.SrvMsgPlayerStrafed, strafedMsg).MarshalMsg(nil)
+		if err != nil {
+			slog.Error("could not marshal updates", err)
+			return err
+		}
+		srv.broadcastUDP(b)
+		c.HandleStrafe(strafeReq.Strafing)
 
 	case messages.ClMsgTeleport:
 		portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
@@ -144,7 +164,6 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 			slog.Error("could not marshal updates", err)
 			return err
 		}
-
 		srv.broadcastUDP(b)
 		srv.game.Teleport(c.ID)
 
@@ -156,7 +175,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 			return err
 		}
 		srv.broadcastUDP(b)
-		srv.game.Blink(c.ID)
+		c.HandleBlink()
 
 	case messages.ClMsgHook:
 		hookedMsg := &messages.PlayerHookedMsg{ID: c.ID}
@@ -166,7 +185,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 			return err
 		}
 		srv.broadcastUDP(b)
-		srv.game.Players[c.ID].ThrowHook()
+		c.UseHook()
 
 	default:
 		return nil
