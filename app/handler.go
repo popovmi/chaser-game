@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"time"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func (c *gameClient) handleMessage(msg messages.Message) error {

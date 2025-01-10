@@ -8,8 +8,8 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func (srv *server) handleUDPData(addr *net.UDPAddr, data []byte, n int) error {

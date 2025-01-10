@@ -8,10 +8,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/app/components"
-	"wars/lib/colors"
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/app/components"
+	"chaser/lib/colors"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 const (

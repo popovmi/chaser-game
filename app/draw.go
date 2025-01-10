@@ -10,8 +10,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"wars/lib/colors"
-	"wars/lib/game"
+	"chaser/lib/colors"
+	"chaser/lib/game"
 )
 
 const lineSpacing = 1.1

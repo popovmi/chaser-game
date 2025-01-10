@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"wars/lib/colors"
-	"wars/lib/vector"
+	"chaser/lib/colors"
+	"chaser/lib/vector"
 )
 
 //go:generate msgp
