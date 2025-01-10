@@ -14,8 +14,8 @@ const (
 	ClMsgHello MessageType = iota
 	ClMsgJoinGame
 	ClMsgMove
-	ClMsgTurn
-	ClMsgStrafe
+	ClMsgRotate
+	ClMsgBrake
 	ClMsgTeleport
 	ClMsgBlink
 	ClMsgHook
@@ -28,7 +28,7 @@ const (
 	SrvMsgGameState
 	SrvMsgPlayerMoved
 	SrvMsgPlayerTurned
-	SrvMsgPlayerStrafed
+	SrvMsgPlayerBraked
 	SrvMsgPlayerTeleported
 	SrvMsgPlayerBlinked
 	SrvMsgPlayerHooked
@@ -69,35 +69,21 @@ type JoinGameMsg struct {
 }
 
 type MoveMsg struct {
-	Dir game.Direction `msg:"dir"`
+	Dir string `msg:"dir"`
 }
 
-type TurnMsg struct {
-	Dir game.Direction `msg:"dir"`
-}
-
-type StrafeMsg struct {
-	Strafing bool `msg:"str"`
-}
-
-type UdpMoveMsg struct {
-	ClientUDPMessage
-	MoveMsg
+type RotateMsg struct {
+	Dir game.RotationDirection `msg:"dir"`
 }
 
 type PlayerMovedMsg struct {
-	ID  string         `msg:"id"`
-	Dir game.Direction `msg:"dir"`
+	ID  string `msg:"id"`
+	Dir string `msg:"dir"`
 }
 
 type PlayerTurnedMsg struct {
-	ID  string         `msg:"id"`
-	Dir game.Direction `msg:"dir"`
-}
-
-type PlayerStrafedMsg struct {
-	ID       string `msg:"id"`
-	Strafing bool   `msg:"str"`
+	ID  string                 `msg:"id"`
+	Dir game.RotationDirection `msg:"dir"`
 }
 
 type PlayerTeleportedMsg struct {
@@ -109,6 +95,10 @@ type PlayerBlinkedMsg struct {
 }
 
 type PlayerHookedMsg struct {
+	ID string `msg:"id"`
+}
+
+type PlayerBrakedMsg struct {
 	ID string `msg:"id"`
 }
 

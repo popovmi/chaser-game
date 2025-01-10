@@ -10,12 +10,12 @@ import (
 )
 
 //go:generate msgp
-type Direction byte
+type RotationDirection byte
 
 const (
-	ZeroDir Direction = iota
-	PositiveDir
-	NegativeDir
+	RotationNone RotationDirection = iota
+	RotationPositive
+	RotationNegative
 )
 
 type Player struct {
@@ -27,12 +27,11 @@ type Player struct {
 	LastChasedAt time.Time `msg:"last_chased_at"`
 	ChaseCount   int       `msg:"chase_count"`
 
-	Position vector.Vector2D `msg:"position"`
-	Velocity vector.Vector2D `msg:"velocity"`
-	Angle    float64         `msg:"angle"`
-	MoveDir  Direction       `msg:"move_dir"`
-	TurnDir  Direction       `msg:"turn_dir"`
-	Strafing bool            `msg:"strafing"`
+	Position    vector.Vector2D   `msg:"position"`
+	Velocity    vector.Vector2D   `msg:"velocity"`
+	Angle       float64           `msg:"angle"`
+	MoveDir     string            `msg:"move_dir"`
+	RotationDir RotationDirection `msg:"turn_dir"`
 
 	Hook       *Hook     `msg:"hook"`
 	HookedAt   time.Time `msg:"hooked_at"`
@@ -60,7 +59,7 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 		p.Friction(dt)
 		p.HookTick(dt, players)
 		p.BlinkTick()
-		p.Turn(dt)
+		p.Rotate(dt)
 
 		if p.Hook == nil || !p.Hook.Stuck {
 			p.Accelerate()
@@ -83,42 +82,57 @@ func (p *Player) BlinkTick() {
 	}
 }
 
-func (p *Player) Turn(dt float64) {
-	if !p.Strafing && p.TurnDir != ZeroDir {
+func (p *Player) Rotate(dt float64) {
+	if p.RotationDir != RotationNone {
 		var angle float64
-		if p.MoveDir == ZeroDir {
+		if p.MoveDir == "" {
 			angle = turnAngle * dt
 		} else {
 			angle = moveTurnAngle * dt
 		}
-		if p.TurnDir == NegativeDir {
+		if p.RotationDir == RotationNegative {
 			angle = -angle
 		}
+
 		p.Angle += angle
 		p.Angle = math.Mod(p.Angle, 2*math.Pi)
 	}
 }
 
 func (p *Player) Accelerate() {
-	if p.MoveDir != ZeroDir {
-		var ax, ay, maxV float64
-		if p.Strafing {
-			ax, ay = -strafeAcceleration*math.Sin(p.Angle), strafeAcceleration*math.Cos(p.Angle)
-			maxV = maxStrafeVelocity
-		} else {
-			ax, ay = acceleration*math.Cos(p.Angle), acceleration*math.Sin(p.Angle)
-			maxV = maxVelocity
-		}
-		if p.MoveDir == NegativeDir {
-			ax, ay = -ax, -ay
-		}
-		previousVelocity := p.Velocity.Length()
-		if previousVelocity > maxVelocity {
-			maxV = maxCollideVelocity
-		}
-		p.Velocity.Add(ax, ay)
-		p.Velocity.LimitLength(maxV)
+	var dvx, dvy float64
+	switch p.MoveDir {
+	case "":
+	case "u":
+		dvy -= acceleration
+	case "d":
+		dvy += acceleration
+	case "l":
+		dvx -= acceleration
+	case "r":
+		dvx += acceleration
+	case "ul":
+		dvy -= acceleration
+		dvx -= acceleration
+	case "ur":
+		dvy -= acceleration
+		dvx += acceleration
+	case "dl":
+		dvy += acceleration
+		dvx -= acceleration
+	case "dr":
+		dvy += acceleration
+		dvx += acceleration
 	}
+
+	maxV := maxVelocity
+	if p.Velocity.Length() > maxVelocity {
+		maxV = maxCollideVelocity
+	}
+
+	p.Velocity.Add(dvx, dvy)
+	p.Velocity.LimitLength(maxV)
+
 }
 
 func (p *Player) Clamp() bool {
@@ -155,9 +169,6 @@ func (p *Player) Step(dt float64) {
 
 func (p *Player) Friction(dt float64) {
 	fr := friction
-	if p.Strafing {
-		fr = strafeFriction
-	}
 	p.Velocity.Mul(math.Exp(-fr * dt))
 }
 
@@ -168,16 +179,12 @@ func (p *Player) HandleBlink() {
 	}
 }
 
-func (p *Player) HandleStrafe(strafe bool) {
-	p.Strafing = strafe
-}
-
-func (p *Player) HandleMove(dir Direction) {
+func (p *Player) HandleMove(dir string) {
 	p.MoveDir = dir
 }
 
-func (p *Player) HandleTurn(dir Direction) {
-	p.TurnDir = dir
+func (p *Player) HandleTurn(dir RotationDirection) {
+	p.RotationDir = dir
 }
 
 func (p *Player) Touching(p2 *Player) bool {
@@ -226,4 +233,9 @@ func (p *Player) CollidePlayer(p2 *Player) {
 		p.Clamp()
 		p2.Clamp()
 	}
+}
+
+func (p *Player) Brake() {
+	p.MoveDir = ""
+	p.Velocity.Mul(Braking)
 }

@@ -136,7 +136,7 @@ func (p *Player) HookPlayer(players map[string]*Player) bool {
 			target.CaughtByID = p.ID
 			target.Velocity.X = 0
 			target.Velocity.Y = 0
-			target.MoveDir = ZeroDir
+			target.MoveDir = ""
 			return true
 		}
 	}
