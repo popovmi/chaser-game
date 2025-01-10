@@ -3,7 +3,7 @@ package messages
 import (
 	"github.com/tinylib/msgp/msgp"
 
-	warsgame "wars/lib/game"
+	"wars/lib/game"
 )
 
 //go:generate msgp
@@ -14,7 +14,8 @@ const (
 	ClMsgHello MessageType = iota
 	ClMsgJoinGame
 	ClMsgMove
-	ClMsgBrake
+	ClMsgTurn
+	ClMsgStrafe
 	ClMsgTeleport
 	ClMsgBlink
 	ClMsgHook
@@ -26,7 +27,8 @@ const (
 	SrvMsgPlayerJoined
 	SrvMsgGameState
 	SrvMsgPlayerMoved
-	SrvMsgPlayerBraked
+	SrvMsgPlayerTurned
+	SrvMsgPlayerStrafed
 	SrvMsgPlayerTeleported
 	SrvMsgPlayerBlinked
 	SrvMsgPlayerHooked
@@ -67,7 +69,15 @@ type JoinGameMsg struct {
 }
 
 type MoveMsg struct {
-	Dir string `msg:"dir"`
+	Dir game.Direction `msg:"dir"`
+}
+
+type TurnMsg struct {
+	Dir game.Direction `msg:"dir"`
+}
+
+type StrafeMsg struct {
+	Strafing bool `msg:"str"`
 }
 
 type UdpMoveMsg struct {
@@ -76,12 +86,18 @@ type UdpMoveMsg struct {
 }
 
 type PlayerMovedMsg struct {
-	ID  string `msg:"id"`
-	Dir string `msg:"dir"`
+	ID  string         `msg:"id"`
+	Dir game.Direction `msg:"dir"`
 }
 
-type PlayerBrakedMsg struct {
-	ID string `msg:"id"`
+type PlayerTurnedMsg struct {
+	ID  string         `msg:"id"`
+	Dir game.Direction `msg:"dir"`
+}
+
+type PlayerStrafedMsg struct {
+	ID       string `msg:"id"`
+	Strafing bool   `msg:"str"`
 }
 
 type PlayerTeleportedMsg struct {
@@ -97,8 +113,7 @@ type PlayerHookedMsg struct {
 }
 
 type GameStateMsg struct {
-	Game *warsgame.Game `msg:"g"`
-	Time int64          `msg:"t"`
+	Game *game.Game `msg:"g"`
 }
 
 func Unmarshal[T msgp.Unmarshaler](msg T, b []byte) (T, error) {

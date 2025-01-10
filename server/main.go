@@ -13,23 +13,23 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/color"
+	"wars/lib/colors"
 	"wars/lib/game"
 	"wars/lib/messages"
 )
 
-func getColors() map[color.RGBA]bool {
-	return map[color.RGBA]bool{
-		color.Green:      false,
-		color.Blue:       false,
-		color.Yellow:     false,
-		color.Purple:     false,
-		color.LightBlue:  false,
-		color.Sky:        false,
-		color.Lime:       false,
-		color.Orange:     false,
-		color.LightGreen: false,
-		color.Brown:      false,
+func getColors() map[colors.RGBA]bool {
+	return map[colors.RGBA]bool{
+		colors.Green:      false,
+		colors.Blue:       false,
+		colors.Yellow:     false,
+		colors.Purple:     false,
+		colors.LightBlue:  false,
+		colors.Sky:        false,
+		colors.Lime:       false,
+		colors.Orange:     false,
+		colors.LightGreen: false,
+		colors.Brown:      false,
 	}
 }
 
@@ -37,17 +37,17 @@ type server struct {
 	tcp        *net.TCPListener
 	udp        *net.UDPConn
 	clients    map[string]*srvClient
-	game       *warsgame.Game
+	game       *game.Game
 	rateTicker *time.Ticker
 	quit       chan struct{}
-	colors     map[color.RGBA]bool
+	colors     map[colors.RGBA]bool
 
 	mu sync.Mutex
 }
 
 func main() {
 	msgp.RegisterExtension(98, func() msgp.Extension { return new(messages.MessageBody) })
-	msgp.RegisterExtension(99, func() msgp.Extension { return new(color.RGBA) })
+	msgp.RegisterExtension(99, func() msgp.Extension { return new(colors.RGBA) })
 
 	var tcpAddr, udpAddr string
 	flag.StringVar(&tcpAddr, "tcpAddr", ":4200", "Server tcp address")
@@ -60,10 +60,10 @@ func main() {
 	slog.SetDefault(logger)
 
 	srv := &server{
-		game:       warsgame.NewGame(),
+		game:       game.NewGame(),
 		clients:    make(map[string]*srvClient),
 		colors:     getColors(),
-		rateTicker: time.NewTicker(time.Second / warsgame.TPS),
+		rateTicker: time.NewTicker(time.Second / 60),
 		quit:       make(chan struct{}),
 	}
 

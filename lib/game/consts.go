@@ -1,38 +1,40 @@
-package warsgame
+package game
+
+import "math"
 
 const (
 	FieldWidth  = 2000
 	FieldHeight = 1500
 
-	Radius       = 30
-	PortalRadius = 75
+	Radius = 30
 
-	Top    = 0 + Radius
-	Bottom = FieldHeight - Radius
-	Left   = 0 + Radius
-	Right  = FieldWidth - Radius
+	PortalRadius   = 75
+	PortalCooldown = 5.0
 
-	Acceleration         = 0.5
-	Braking              = 0.85
-	Friction             = 0.05
-	WallElasticity       = 1.2
-	PlayerElasticity     = 1.2
-	BrickElasticity      = 0.8
-	MaxVelocity          = 6.5
-	MaxCollideVelocity   = 10
-	UntouchableTime      = 2000
-	BlinkDistance        = 350
-	BlinkCooldown        = 4000
-	PortalCooldown       = 5000
-	HookVelocity         = 20
-	HookBackwardVelocity = 15
-	HookDistance         = 700
-	HookCooldown         = 5000
+	turnAngle     = math.Pi * 1.75
+	moveTurnAngle = math.Pi * 1
 
-	TPS = 60
+	acceleration       = 10.0
+	strafeAcceleration = 7.5
+	maxVelocity        = 300.0
+	maxCollideVelocity = 500
+	maxStrafeVelocity  = 250
 
-	LineSpacing     = 1.1
-	TextFieldHeight = 30
-	TextFieldWidth  = 282
-	MaxTextLength   = 20
+	wallElasticity  = 1.1
+	BrickElasticity = 0.6
+
+	friction       = 0.9
+	strafeFriction = 0.7
+
+	blinkDistance = 500
+	BlinkDuration = 0.5
+	BlinkCooldown = 4.0 + BlinkDuration
+
+	HookCooldown         = 5.0
+	hookDistance         = 750
+	hookMinDistance      = 100
+	hookVelocity         = 750
+	hookBackwardVelocity = 750
+
+	untouchableTime = 2.0
 )

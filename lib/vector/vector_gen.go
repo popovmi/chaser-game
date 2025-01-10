@@ -7,7 +7,7 @@ import (
 )
 
 // DecodeMsg implements msgp.Decodable
-func (z *Vect2D) DecodeMsg(dc *msgp.Reader) (err error) {
+func (z *Vector2D) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -48,7 +48,7 @@ func (z *Vect2D) DecodeMsg(dc *msgp.Reader) (err error) {
 }
 
 // EncodeMsg implements msgp.Encodable
-func (z Vect2D) EncodeMsg(en *msgp.Writer) (err error) {
+func (z Vector2D) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 2
 	// write "x"
 	err = en.Append(0x82, 0xa1, 0x78)
@@ -74,7 +74,7 @@ func (z Vect2D) EncodeMsg(en *msgp.Writer) (err error) {
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z Vect2D) MarshalMsg(b []byte) (o []byte, err error) {
+func (z Vector2D) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2
 	// string "x"
@@ -87,7 +87,7 @@ func (z Vect2D) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *Vect2D) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Vector2D) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -129,7 +129,7 @@ func (z *Vect2D) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z Vect2D) Msgsize() (s int) {
+func (z Vector2D) Msgsize() (s int) {
 	s = 1 + 2 + msgp.Float64Size + 2 + msgp.Float64Size
 	return
 }

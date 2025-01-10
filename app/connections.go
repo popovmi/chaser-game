@@ -87,7 +87,7 @@ func (c *gameClient) sendTCPWithBody(t messages.MessageType, data msgp.Marshaler
 }
 
 func (c *gameClient) sendUDPWithBody(t messages.MessageType, data msgp.Marshaler) error {
-	if err := msgp.Encode(c.UDPConn, messages.UDP(t, c.id, data)); err != nil {
+	if err := msgp.Encode(c.UDPConn, messages.UDP(t, c.clientID, data)); err != nil {
 		slog.Error("could not send UDP message", err.Error())
 		return err
 	}

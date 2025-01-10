@@ -26,7 +26,7 @@ var (
 	FontFaceBold18     *text.GoTextFace
 )
 
-func InitFont() {
+func LoadFonts() {
 	s, err := text.NewGoTextFaceSource(bytes.NewReader(robotoMonoTtf))
 	if err != nil {
 		log.Fatal(err)

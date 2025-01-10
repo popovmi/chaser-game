@@ -12,7 +12,7 @@ import (
 )
 
 type srvClient struct {
-	*warsgame.Player
+	*game.Player
 
 	ip      string
 	tcp     net.Conn

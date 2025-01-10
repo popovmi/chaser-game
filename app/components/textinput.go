@@ -12,8 +12,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-
-	"wars/lib/game"
 )
 
 type TextField struct {
@@ -21,15 +19,19 @@ type TextField struct {
 	multilines bool
 	field      textinput.Field
 	fontFace   *text.GoTextFace
+	maxLength  int
+	height     int
 }
 
 func NewTextField(
-	bounds image.Rectangle, multilines bool, fontFace *text.GoTextFace,
+	bounds image.Rectangle, multilines bool, fontFace *text.GoTextFace, maxLength int, height int,
 ) *TextField {
 	return &TextField{
 		bounds:     bounds,
 		multilines: multilines,
 		fontFace:   fontFace,
+		maxLength:  maxLength,
+		height:     height,
 	}
 }
 
@@ -120,7 +122,7 @@ func (t *TextField) Update() error {
 	px, py := t.padding()
 	x += cx + px
 	y += cy + py + int(t.fontFace.Metrics().HAscent)
-	if len(fieldVal) < warsgame.MaxTextLength {
+	if len(fieldVal) < t.maxLength {
 		handled, err := t.field.HandleInput(x, y)
 		if err != nil {
 			return err
@@ -259,5 +261,5 @@ func (t *TextField) Draw(screen *ebiten.Image) {
 
 func (t *TextField) padding() (int, int) {
 	m := t.fontFace.Metrics()
-	return 4, (warsgame.TextFieldHeight - int(m.HLineGap+m.HAscent+m.HDescent)) / 2
+	return 4, (t.height - int(m.HLineGap+m.HAscent+m.HDescent)) / 2
 }
