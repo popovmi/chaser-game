@@ -279,5 +279,6 @@ func (p *Player) die() {
 	p.Velocity = vector.NewVector2D(0, 0)
 	p.Blinking = false
 	p.Blinked = false
+	p.Angle = 0
 	p.Hook = nil
 }
