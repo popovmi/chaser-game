@@ -29,9 +29,9 @@ const (
 	BlinkCooldown = 2.0 + BlinkDuration
 
 	HookCooldown         = 3.0
-	MaxHookLength        = 500
-	hookVelocity         = 750
-	hookBackwardVelocity = 750
+	MaxHookLength        = 400
+	hookVelocity         = 650
+	hookBackwardVelocity = 650
 	hookDamage           = 50
 
 	untouchableTime = 2.0
