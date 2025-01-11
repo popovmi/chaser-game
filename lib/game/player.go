@@ -41,8 +41,9 @@ type Player struct {
 	Kills  int `msg:"kills"`
 	Deaths int `msg:"deaths"`
 
-	DeadAt      time.Time `msg:"dead_at"`
-	RespawnedAt time.Time `msg:"respawned_at"`
+	DeathPos    vector.Vector2D `msg:"death_pos"`
+	DeadAt      time.Time       `msg:"dead_at"`
+	RespawnedAt time.Time       `msg:"respawned_at"`
 
 	Position    vector.Vector2D   `msg:"position"`
 	Velocity    vector.Vector2D   `msg:"velocity"`
@@ -80,13 +81,13 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 	p.BlinkTick()
 	if !p.IsHooked {
 		p.Friction(dt)
-		p.HookTick(dt, players)
 		p.Rotate(dt)
 
 		if p.Hook == nil || !p.Hook.Stuck {
 			p.Accelerate()
 			p.Step(dt)
 		}
+		p.HookTick(dt, players)
 	}
 }
 
@@ -118,7 +119,7 @@ func (p *Player) Rotate(dt float64) {
 
 		p.Angle += angle
 		p.Angle = math.Mod(p.Angle, 2*math.Pi)
-		p.RotateHook(angle)
+		p.RotateHook()
 	}
 }
 
@@ -215,7 +216,8 @@ func (p *Player) Touching(p2 *Player) bool {
 }
 
 func (p *Player) Touchable() bool {
-	return time.Since(p.JoinedAt).Seconds() >= untouchableTime &&
+	return p.Status != PlayerStatusDead &&
+		time.Since(p.JoinedAt).Seconds() >= untouchableTime &&
 		time.Since(p.RespawnedAt).Seconds() >= untouchableTime
 }
 
@@ -266,6 +268,7 @@ func (p *Player) Brake() {
 func (p *Player) die() {
 	p.Status = PlayerStatusDead
 	p.DeadAt = time.Now()
+	p.DeathPos = vector.NewVector2D(p.Position.X, p.Position.Y)
 	p.Deaths += 1
 	p.IsHooked = false
 	p.CaughtByID = ""

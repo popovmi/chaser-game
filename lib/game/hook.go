@@ -157,25 +157,23 @@ func (p *Player) takeHookHit(hookedPlayer *Player) {
 	p.MoveDir = ""
 }
 
-func (p *Player) RotateHook(angle float64) {
+func (p *Player) RotateHook() {
 	if p.Hook == nil || p.Hook.Stuck {
 		return
 	}
 	currentVector := vector.NewVector2D(p.Hook.End.X, p.Hook.End.Y)
 	currentVector.SubV(p.Position)
-
 	distance := currentVector.Length()
-	newAngle := math.Atan2(currentVector.Y, currentVector.X) + angle
 
-	p.Hook.End.X = p.Position.X + distance*math.Cos(newAngle)
-	p.Hook.End.Y = p.Position.Y + distance*math.Sin(newAngle)
+	p.Hook.End.X = p.Position.X + distance*math.Cos(p.Angle)
+	p.Hook.End.Y = p.Position.Y + distance*math.Sin(p.Angle)
 
 	if p.Hook.IsReturning {
-		p.Hook.Vel.X = -math.Cos(newAngle) * hookBackwardVelocity
-		p.Hook.Vel.Y = -math.Sin(newAngle) * hookBackwardVelocity
+		p.Hook.Vel.X = -math.Cos(p.Angle) * hookBackwardVelocity
+		p.Hook.Vel.Y = -math.Sin(p.Angle) * hookBackwardVelocity
 	} else {
-		p.Hook.Vel.X = math.Cos(newAngle) * hookVelocity
-		p.Hook.Vel.Y = math.Sin(newAngle) * hookVelocity
+		p.Hook.Vel.X = math.Cos(p.Angle) * hookVelocity
+		p.Hook.Vel.Y = math.Sin(p.Angle) * hookVelocity
 	}
 
 }

@@ -11,7 +11,7 @@ const (
 	PortalRadius   = 75
 	PortalCooldown = 5.0
 
-	turnAngle     = math.Pi * 1.5
+	turnAngle     = math.Pi * 1
 	moveTurnAngle = math.Pi * 1
 
 	acceleration       = 10.0
