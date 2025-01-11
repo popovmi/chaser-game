@@ -76,6 +76,12 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "Deaths")
 				return
 			}
+		case "death_pos":
+			err = z.DeathPos.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "DeathPos")
+				return
+			}
 		case "dead_at":
 			z.DeadAt, err = dc.ReadTime()
 			if err != nil {
@@ -189,9 +195,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 22
+	// map header, size 23
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x16, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x17, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -268,6 +274,16 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 	err = en.WriteInt(z.Deaths)
 	if err != nil {
 		err = msgp.WrapError(err, "Deaths")
+		return
+	}
+	// write "death_pos"
+	err = en.Append(0xa9, 0x64, 0x65, 0x61, 0x74, 0x68, 0x5f, 0x70, 0x6f, 0x73)
+	if err != nil {
+		return
+	}
+	err = z.DeathPos.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "DeathPos")
 		return
 	}
 	// write "dead_at"
@@ -423,9 +439,9 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 22
+	// map header, size 23
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x16, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x17, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -452,6 +468,13 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "deaths"
 	o = append(o, 0xa6, 0x64, 0x65, 0x61, 0x74, 0x68, 0x73)
 	o = msgp.AppendInt(o, z.Deaths)
+	// string "death_pos"
+	o = append(o, 0xa9, 0x64, 0x65, 0x61, 0x74, 0x68, 0x5f, 0x70, 0x6f, 0x73)
+	o, err = z.DeathPos.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "DeathPos")
+		return
+	}
 	// string "dead_at"
 	o = append(o, 0xa7, 0x64, 0x65, 0x61, 0x64, 0x5f, 0x61, 0x74)
 	o = msgp.AppendTime(o, z.DeadAt)
@@ -583,6 +606,12 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Deaths")
 				return
 			}
+		case "death_pos":
+			bts, err = z.DeathPos.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "DeathPos")
+				return
+			}
 		case "dead_at":
 			z.DeadAt, bts, err = msgp.ReadTimeBytes(bts)
 			if err != nil {
@@ -696,7 +725,7 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Player) Msgsize() (s int) {
-	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 5
+	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 10 + z.DeathPos.Msgsize() + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 5
 	if z.Hook == nil {
 		s += msgp.NilSize
 	} else {

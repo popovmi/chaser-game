@@ -85,8 +85,9 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
-		img := c.playerImages[p.ID].animation.Image()
-		w, h := float64(img.Bounds().Dx()), float64(img.Bounds().Dy())
+		image := c.playerImages[p.ID].animation.Image()
+		//image := c.playerImages[p.ID].baseImg
+		imageW, imageH := float64(image.Bounds().Dx()), float64(image.Bounds().Dy())
 
 		lineSpacing := 1.1
 		nameStr := p.Name
@@ -94,48 +95,62 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			nameStr += " (you)"
 		}
 		textW, textH := text.Measure(nameStr, FontFaceBold18, lineSpacing)
-		textOp := &text.DrawOptions{}
-		textOp.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
-		textOp.LineSpacing = 1.1
-		textOp.GeoM.Translate(-c.cameraX, -c.cameraY)
-		textOp.GeoM.Translate(p.Position.X-textW/2, p.Position.Y-game.Radius-textH)
-		text.Draw(screen, nameStr, FontFaceBold18, textOp)
 
-		options := &ebiten.DrawImageOptions{}
-		options.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
-		options.ColorScale.ScaleWithColor(color.White)
-		options.GeoM.Translate(-w/2, -h+game.Radius)
-		options.GeoM.Rotate(p.Angle)
-		options.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
-
-		if ut, ok := c.untouchableTimers[p.ID]; ok {
-			if !ut.visible {
-				options.ColorScale.ScaleAlpha(0)
+		isDead := p.Status == game.PlayerStatusDead
+		timeSinceDeath := time.Since(p.DeadAt).Seconds()
+		if isDead {
+			if timeSinceDeath > 1 {
+				continue
 			}
 		}
 
-		if p.Blinking {
-			var alpha float32
-			progress := time.Since(p.BlinkedAt).Seconds() / game.BlinkDuration
-			if progress < 0.5 {
-				alpha = float32(1 - 2*progress)
-			} else {
-				alpha = float32(2*progress - 1)
-			}
-			options.ColorScale.ScaleAlpha(alpha)
-		}
-		screen.DrawImage(img, options)
+		imageDrawOptions := &ebiten.DrawImageOptions{}
+		nameTextOptions := &text.DrawOptions{}
 
-		hpOp := &ebiten.DrawImageOptions{}
-		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
-		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
-		screen.DrawImage(c.healthImg, hpOp)
-		hpWidth := (p.HP / game.MaxHP) * 50
-		hpOp.GeoM.Reset()
-		hpOp.GeoM.Scale(hpWidth/50, 1)
-		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
-		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
-		screen.DrawImage(c.healthFillImg, hpOp)
+		imageDrawOptions.GeoM.Translate(-imageW/2, -imageH+game.Radius)
+		imageDrawOptions.GeoM.Rotate(p.Angle)
+		imageDrawOptions.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
+
+		nameTextOptions.LineSpacing = lineSpacing
+		nameTextOptions.GeoM.Translate(-c.cameraX, -c.cameraY)
+		nameTextOptions.GeoM.Translate(p.Position.X-textW/2, p.Position.Y+game.Radius)
+
+		if isDead {
+			imageDrawOptions.ColorScale.ScaleWithColor(color.Gray{Y: 50})
+			imageDrawOptions.ColorScale.ScaleAlpha(float32(1 - timeSinceDeath))
+
+			nameTextOptions.ColorScale.ScaleWithColor(color.Gray{Y: 50})
+			nameTextOptions.ColorScale.ScaleAlpha(float32(1 - timeSinceDeath))
+		} else {
+			if ut, ok := c.untouchableTimers[p.ID]; ok && !ut.visible {
+				imageDrawOptions.ColorScale.ScaleAlpha(0)
+			}
+			if p.Blinking {
+				var alpha float32
+				progress := time.Since(p.BlinkedAt).Seconds() / game.BlinkDuration
+				if progress < 0.5 {
+					alpha = float32(1 - 2*progress)
+				} else {
+					alpha = float32(2*progress - 1)
+				}
+				imageDrawOptions.ColorScale.ScaleAlpha(alpha)
+			}
+
+			nameTextOptions.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
+
+			hpOp := &ebiten.DrawImageOptions{}
+			hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+			hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+			screen.DrawImage(c.healthImg, hpOp)
+			hpWidth := (p.HP / game.MaxHP) * 50
+			hpOp.GeoM.Reset()
+			hpOp.GeoM.Scale(hpWidth/50, 1)
+			hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+			hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+			screen.DrawImage(c.healthFillImg, hpOp)
+		}
+		text.Draw(screen, nameStr, FontFaceBold18, nameTextOptions)
+		screen.DrawImage(image, imageDrawOptions)
 
 		if p.Hook != nil {
 			shiftedStartX := float32(p.Position.X) - float32(c.cameraX)
@@ -147,15 +162,18 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 				screen,
 				shiftedStartX, shiftedStartY,
 				shiftedEndX, shiftedEndY,
-				5,
+				3,
 				p.Color.ToColorRGBA(),
 				true,
 			)
 		}
 		if p.ID == c.clientID {
+			var touching bool
 			for _, link := range c.game.PortalLinks {
 				for _, port := range []*game.Portal{link.P1, link.P2} {
 					if port.Touching(p) {
+						touching = true
+
 						clr := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 						if time.Since(link.LastUsed[p.ID]).Seconds() < game.PortalCooldown {
 							clr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
@@ -166,7 +184,11 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 							game.PortalRadius-5,
 							1, clr, true,
 						)
+						break
 					}
+				}
+				if touching {
+					break
 				}
 			}
 		}

@@ -46,8 +46,9 @@ func (p *Player) HookTick(dt float64, players map[string]*Player) {
 			p.Hook.End.AddV(p.Hook.Vel)
 		} else {
 			p.Hook.End.Add(p.Hook.Vel.X*dt, p.Hook.Vel.Y*dt)
-			p.Hook.CurrentDistance += hookVelocity * dt
-			if p.Hook.CurrentDistance >= hookDistance {
+			v := vector.NewVector2D(p.Position.X, p.Position.Y)
+			v.SubV(p.Hook.End)
+			if v.Length() >= hookDistance {
 				p.Hook.IsReturning = true
 			}
 		}
@@ -154,5 +155,25 @@ func (p *Player) takeHookHit(hookedPlayer *Player) {
 	p.Velocity.X = 0
 	p.Velocity.Y = 0
 	p.MoveDir = ""
+}
+
+func (p *Player) RotateHook() {
+	if p.Hook == nil || p.Hook.Stuck {
+		return
+	}
+	currentVector := vector.NewVector2D(p.Hook.End.X, p.Hook.End.Y)
+	currentVector.SubV(p.Position)
+	distance := currentVector.Length()
+
+	p.Hook.End.X = p.Position.X + distance*math.Cos(p.Angle)
+	p.Hook.End.Y = p.Position.Y + distance*math.Sin(p.Angle)
+
+	if p.Hook.IsReturning {
+		p.Hook.Vel.X = -math.Cos(p.Angle) * hookBackwardVelocity
+		p.Hook.Vel.Y = -math.Sin(p.Angle) * hookBackwardVelocity
+	} else {
+		p.Hook.Vel.X = math.Cos(p.Angle) * hookVelocity
+		p.Hook.Vel.Y = math.Sin(p.Angle) * hookVelocity
+	}
 
 }
