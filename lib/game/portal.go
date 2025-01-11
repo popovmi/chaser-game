@@ -88,8 +88,7 @@ func (pn *PortalNetwork) Teleport(player *Player) bool {
 			link.LastUsed[player.ID] = time.Now()
 			dx := pn.Portals[arrivalID].Pos.X - player.Position.X
 			dy := pn.Portals[arrivalID].Pos.Y - player.Position.Y
-			player.Position.X = pn.Portals[arrivalID].Pos.X
-			player.Position.Y = pn.Portals[arrivalID].Pos.Y
+			player.Position.Add(dx, dy)
 			if player.Hook != nil {
 				player.Hook.End.Add(dx, dy)
 			}

@@ -31,6 +31,7 @@ type playerImg struct {
 	animation *Animation
 	baseImg   *ebiten.Image
 	hookImg   *ebiten.Image
+	astroImg  *ebiten.Image
 }
 
 type untouchableTimer struct {
@@ -59,6 +60,7 @@ type gameClient struct {
 	brickImg          *ebiten.Image
 	healthImg         *ebiten.Image
 	healthFillImg     *ebiten.Image
+	playerImg         *ebiten.Image
 	playerImages      map[string]*playerImg
 	untouchableTimers map[string]*untouchableTimer
 

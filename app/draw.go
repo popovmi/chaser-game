@@ -85,7 +85,8 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
-		image := c.playerImages[p.ID].animation.Image()
+		image := c.playerImages[p.ID].astroImg
+		//image := c.playerImages[p.ID].animation.Image()
 		imageW, imageH := float64(image.Bounds().Dx()), float64(image.Bounds().Dy())
 
 		lineSpacing := 1.1

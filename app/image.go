@@ -40,6 +40,9 @@ var (
 	//go:embed assets/ship/Ship8.png
 	ship8Bytes []byte
 
+	//go:embed assets/Player100x100.png
+	playerBytes []byte
+
 	playerSprites = make([]*ebiten.Image, 0)
 )
 
@@ -55,6 +58,10 @@ func (c *gameClient) createDefaultImages() {
 		panic(err)
 	}
 	portal, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(portalBytes))
+	if err != nil {
+		panic(err)
+	}
+	astro, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(playerBytes))
 	if err != nil {
 		panic(err)
 	}
@@ -83,11 +90,18 @@ func (c *gameClient) createDefaultImages() {
 	brickOp.ColorScale.ScaleAlpha(0.70)
 	brickImg.DrawImage(brick, brickOp)
 
+	playerImg := ebiten.NewImage(2*game.Radius, 2*game.Radius)
+	astroOp := &ebiten.DrawImageOptions{}
+	scale := 2 * game.Radius / float64(astro.Bounds().Dx())
+	astroOp.GeoM.Scale(scale, scale)
+	playerImg.DrawImage(astro, astroOp)
+
 	c.worldImg = worldImg
 	c.portalImg = portalImg
 	c.brickImg = brickImg
 	c.healthImg = healthImage
 	c.healthFillImg = healthFillImg
+	c.playerImg = playerImg
 
 	for _, spriteBytes := range [][]byte{
 		ship1Bytes, ship2Bytes,
@@ -136,7 +150,12 @@ func (c *gameClient) сreatePlayerImages(p *game.Player) {
 		true,
 	)
 
-	c.playerImages[p.ID] = &playerImg{animation, baseImg, hookImg}
+	astroImg := ebiten.NewImage(w, h)
+	astroOp := &ebiten.DrawImageOptions{}
+	astroOp.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
+	astroImg.DrawImage(c.playerImg, astroOp)
+
+	c.playerImages[p.ID] = &playerImg{animation, baseImg, hookImg, astroImg}
 }
 
 func drawEyes(img *ebiten.Image, cx, cy float32) {
