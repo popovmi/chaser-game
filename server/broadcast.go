@@ -3,8 +3,8 @@ package main
 import (
 	"log/slog"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func (srv *server) broadcastState() {

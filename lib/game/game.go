@@ -16,11 +16,9 @@ type Game struct {
 	PortalLinks []*PortalLink      `msg:"portalLinks"`
 	Bricks      []*Brick           `msg:"bricks"`
 
-	Counter atomic.Uint64 `msg:"-"`
-
-	PreviousTick int64
-
-	Mu sync.Mutex
+	Counter      atomic.Uint64 `msg:"-"`
+	Mu           sync.Mutex    `msg:"-"`
+	PreviousTick int64         `msg:"-"`
 }
 
 func NewGame() *Game {

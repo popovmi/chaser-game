@@ -10,8 +10,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"wars/lib/colors"
-	"wars/lib/game"
+	"chaser/lib/colors"
+	"chaser/lib/game"
 )
 
 const lineSpacing = 1.1
@@ -86,11 +86,12 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
-		img := c.playerImages[p.ID].baseImg
 		isChaser := c.game.ChaserID == p.ID
-		if isChaser {
-			img = c.playerImages[p.ID].chaseImg
-		}
+		img := c.playerImages[p.ID].animation.Image()
+		//img := c.playerImages[p.ID].baseImg
+		//if isChaser {
+		//	img = c.playerImages[p.ID].chaseImg
+		//}
 		w, h := float64(img.Bounds().Dx()), float64(img.Bounds().Dy())
 
 		lineSpacing := 1.1
@@ -107,6 +108,8 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		text.Draw(screen, nameStr, FontFaceBold18, textOp)
 
 		options := &ebiten.DrawImageOptions{}
+		options.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
+		options.ColorScale.ScaleWithColor(color.White)
 		options.GeoM.Translate(-w/2, -h+game.Radius)
 		options.GeoM.Rotate(p.Angle)
 		options.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
@@ -230,7 +233,7 @@ func (c *gameClient) drawSpells(screen *ebiten.Image) {
 	blinkText := "Blink:  Space"
 	hookText := "Hook:   Q"
 	portalText := "Portal: E"
-	strafeText := "Strafe:  Shift"
+	strafeText := "Brake:  Shift"
 
 	portalTouching, usedTime := c.game.CanUsePortal(p.ID)
 	portalUsedTime := time.Since(usedTime).Seconds()

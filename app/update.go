@@ -7,9 +7,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 
-	"wars/app/components"
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/app/components"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func (c *gameClient) Update() error {
@@ -96,6 +96,7 @@ func (c *gameClient) updateGameScreen() error {
 		} else {
 			delete(c.untouchableTimers, p.ID)
 		}
+		c.playerImages[p.ID].animation.Update()
 	}
 	return nil
 }
@@ -109,11 +110,11 @@ func (c *gameClient) joinGame(name string) error {
 	return nil
 }
 
-func (c *gameClient) turn(dir game.Direction) {
+func (c *gameClient) rotate(dir game.RotationDirection) {
 	p, ok := c.game.Players[c.clientID]
-	if ok && dir != p.TurnDir {
+	if ok && dir != p.RotationDir {
 		go func() {
-			err := c.sendTCPWithBody(messages.ClMsgTurn, &messages.TurnMsg{Dir: dir})
+			err := c.sendTCPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
 			if err != nil {
 				slog.Error("could not send move", "error", err.Error())
 			}
@@ -122,7 +123,7 @@ func (c *gameClient) turn(dir game.Direction) {
 	}
 }
 
-func (c *gameClient) move(dir game.Direction) {
+func (c *gameClient) move(dir string) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.MoveDir {
 		go func() {
@@ -132,19 +133,6 @@ func (c *gameClient) move(dir game.Direction) {
 			}
 		}()
 		p.HandleMove(dir)
-	}
-}
-
-func (c *gameClient) strafe(strafing bool) {
-	p, ok := c.game.Players[c.clientID]
-	if ok {
-		go func() {
-			err := c.sendTCPWithBody(messages.ClMsgStrafe, &messages.StrafeMsg{Strafing: strafing})
-			if err != nil {
-				slog.Error("could not send brake", "error", err.Error())
-			}
-		}()
-		p.HandleStrafe(strafing)
 	}
 }
 
@@ -174,6 +162,7 @@ func (c *gameClient) blink() {
 		}()
 		p.HandleBlink()
 	}
+
 }
 
 func (c *gameClient) hook() {
@@ -189,53 +178,78 @@ func (c *gameClient) hook() {
 	}
 }
 
+func (c *gameClient) brake() {
+	p, ok := c.game.Players[c.clientID]
+	if ok {
+		go func() {
+			err := c.sendTCP(messages.ClMsgBrake)
+			if err != nil {
+				slog.Error("could not send brake", "error", err.Error())
+			}
+		}()
+		p.Brake()
+	}
+}
+
 func (c *gameClient) HandleInput() {
-	p := c.game.Players[c.clientID]
 	if ebiten.IsKeyPressed(ebiten.KeyE) {
 		c.teleport()
 	}
-
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		c.blink()
 	}
-
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		c.hook()
 	}
-
-	strafe := false
 	if ebiten.IsKeyPressed(ebiten.KeyShift) {
-		strafe = true
-	}
-	if p.Strafing != strafe {
-		c.strafe(strafe)
+		c.brake()
 	}
 
-	moveDir := game.ZeroDir
-	if p.Strafing {
-		if ebiten.IsKeyPressed(ebiten.KeyD) {
-			moveDir = game.PositiveDir
-		}
-		if ebiten.IsKeyPressed(ebiten.KeyA) {
-			moveDir = game.NegativeDir
-		}
-		c.move(moveDir)
-	} else {
-		turnDir := game.ZeroDir
-		if ebiten.IsKeyPressed(ebiten.KeyD) {
-			turnDir = game.PositiveDir
-		}
-		if ebiten.IsKeyPressed(ebiten.KeyA) {
-			turnDir = game.NegativeDir
-		}
-		c.turn(turnDir)
+	c.rotate(getRotateDirection())
+	c.move(getMoveDirection())
+}
 
-		if ebiten.IsKeyPressed(ebiten.KeyW) {
-			moveDir = game.PositiveDir
-		}
-		if ebiten.IsKeyPressed(ebiten.KeyS) {
-			moveDir = game.NegativeDir
-		}
-		c.move(moveDir)
+func getRotateDirection() game.RotationDirection {
+	var rotateDir game.RotationDirection
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+		rotateDir = game.RotationPositive
 	}
+	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+		rotateDir = game.RotationNegative
+	}
+	return rotateDir
+}
+
+func getMoveDirection() string {
+	h := chooseDir(isRight(), isLeft(), "r", "l")
+	v := chooseDir(isUp(), isDown(), "u", "d")
+	return v + h
+}
+
+func chooseDir(m, om bool, d, od string) string {
+	if m != om {
+		if m {
+			return d
+		}
+		if om {
+			return od
+		}
+	}
+	return ""
+}
+
+func isUp() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyW)
+}
+
+func isDown() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyS)
+}
+
+func isLeft() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyA)
+}
+
+func isRight() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyD)
 }

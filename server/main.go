@@ -13,9 +13,9 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/colors"
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/lib/colors"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func getColors() map[colors.RGBA]bool {

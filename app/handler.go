@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"time"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"chaser/lib/game"
+	"chaser/lib/messages"
 )
 
 func (c *gameClient) handleMessage(msg messages.Message) error {
@@ -59,8 +59,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 				player.Velocity = updatedPlayer.Velocity
 				player.Angle = updatedPlayer.Angle
 				player.MoveDir = updatedPlayer.MoveDir
-				player.TurnDir = updatedPlayer.TurnDir
-				player.Strafing = updatedPlayer.Strafing
+				player.RotationDir = updatedPlayer.RotationDir
 				player.Hook = updatedPlayer.Hook
 				player.HookedAt = updatedPlayer.HookedAt
 				player.IsHooked = updatedPlayer.IsHooked
@@ -97,15 +96,6 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		if turnedMsg.ID != c.clientID {
 			c.game.Players[turnedMsg.ID].HandleTurn(turnedMsg.Dir)
-		}
-
-	case messages.SrvMsgPlayerStrafed:
-		strafedMsg, err := messages.Unmarshal(&messages.PlayerStrafedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if strafedMsg.ID != c.clientID {
-			c.game.Players[strafedMsg.ID].HandleStrafe(strafedMsg.Strafing)
 		}
 
 	case messages.SrvMsgPlayerTeleported:
