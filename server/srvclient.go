@@ -6,9 +6,9 @@ import (
 	"net"
 
 	"github.com/tinylib/msgp/msgp"
-
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 type srvClient struct {

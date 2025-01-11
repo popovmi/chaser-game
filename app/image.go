@@ -10,7 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"chaser/lib/game"
+	"wars/lib/game"
 )
 
 var (
@@ -116,19 +116,8 @@ func (c *gameClient) CreatePlayerImages(p *game.Player) {
 	)
 	drawEyes(baseImg, float32(game.Radius), float32(game.Radius))
 
-	chaseImg := ebiten.NewImage(w, h)
-	vector.StrokeCircle(chaseImg, float32(game.Radius), float32(game.Radius), game.Radius-2, 3,
-		p.Color.ToColorRGBA(),
-		true)
-	vector.StrokeLine(chaseImg,
-		float32(game.Radius)+faceLength, float32(game.Radius),
-		float32(game.Radius), float32(game.Radius),
-		5, p.Color.ToColorRGBA(), true,
-	)
-	drawEyes(chaseImg, float32(game.Radius), float32(game.Radius))
-
 	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
-	c.playerImages[p.ID] = &playerImg{animation, baseImg, chaseImg}
+	c.playerImages[p.ID] = &playerImg{animation, baseImg}
 }
 
 func drawEyes(img *ebiten.Image, cx, cy float32) {

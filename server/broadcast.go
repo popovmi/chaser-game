@@ -3,14 +3,14 @@ package main
 import (
 	"log/slog"
 
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 func (srv *server) broadcastState() {
 	b, err := messages.New(messages.SrvMsgGameState,
 		&messages.GameStateMsg{
-			Game: &game.Game{Players: srv.game.Players, ChaserID: srv.game.ChaserID},
+			Game: &game.Game{Players: srv.game.Players},
 		}).MarshalMsg(nil)
 	if err != nil {
 		slog.Error("could not marshal state", err.Error())

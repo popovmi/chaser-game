@@ -8,7 +8,7 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"chaser/lib/messages"
+	"wars/lib/messages"
 )
 
 func (c *gameClient) openTCPConnection() {

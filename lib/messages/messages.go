@@ -3,7 +3,7 @@ package messages
 import (
 	"github.com/tinylib/msgp/msgp"
 
-	"chaser/lib/game"
+	"wars/lib/game"
 )
 
 //go:generate msgp

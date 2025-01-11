@@ -6,10 +6,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-
-	"chaser/app/components"
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	
+	"wars/app/components"
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 func (c *gameClient) Update() error {

@@ -1,4 +1,4 @@
-module chaser
+module wars
 
 go 1.23.0
 

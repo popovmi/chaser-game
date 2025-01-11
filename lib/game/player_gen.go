@@ -48,18 +48,6 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "JoinedAt")
 				return
 			}
-		case "last_chased_at":
-			z.LastChasedAt, err = dc.ReadTime()
-			if err != nil {
-				err = msgp.WrapError(err, "LastChasedAt")
-				return
-			}
-		case "chase_count":
-			z.ChaseCount, err = dc.ReadInt()
-			if err != nil {
-				err = msgp.WrapError(err, "ChaseCount")
-				return
-			}
 		case "position":
 			err = z.Position.DecodeMsg(dc)
 			if err != nil {
@@ -161,9 +149,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 18
+	// map header, size 16
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x12, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x10, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -200,26 +188,6 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 	err = en.WriteTime(z.JoinedAt)
 	if err != nil {
 		err = msgp.WrapError(err, "JoinedAt")
-		return
-	}
-	// write "last_chased_at"
-	err = en.Append(0xae, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
-	if err != nil {
-		return
-	}
-	err = en.WriteTime(z.LastChasedAt)
-	if err != nil {
-		err = msgp.WrapError(err, "LastChasedAt")
-		return
-	}
-	// write "chase_count"
-	err = en.Append(0xab, 0x63, 0x68, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74)
-	if err != nil {
-		return
-	}
-	err = en.WriteInt(z.ChaseCount)
-	if err != nil {
-		err = msgp.WrapError(err, "ChaseCount")
 		return
 	}
 	// write "position"
@@ -355,9 +323,9 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 18
+	// map header, size 16
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x12, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x10, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -372,12 +340,6 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "joined_at"
 	o = append(o, 0xa9, 0x6a, 0x6f, 0x69, 0x6e, 0x65, 0x64, 0x5f, 0x61, 0x74)
 	o = msgp.AppendTime(o, z.JoinedAt)
-	// string "last_chased_at"
-	o = append(o, 0xae, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
-	o = msgp.AppendTime(o, z.LastChasedAt)
-	// string "chase_count"
-	o = append(o, 0xab, 0x63, 0x68, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74)
-	o = msgp.AppendInt(o, z.ChaseCount)
 	// string "position"
 	o = append(o, 0xa8, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e)
 	o, err = z.Position.MarshalMsg(o)
@@ -473,18 +435,6 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			z.JoinedAt, bts, err = msgp.ReadTimeBytes(bts)
 			if err != nil {
 				err = msgp.WrapError(err, "JoinedAt")
-				return
-			}
-		case "last_chased_at":
-			z.LastChasedAt, bts, err = msgp.ReadTimeBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "LastChasedAt")
-				return
-			}
-		case "chase_count":
-			z.ChaseCount, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "ChaseCount")
 				return
 			}
 		case "position":
@@ -588,7 +538,7 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Player) Msgsize() (s int) {
-	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 15 + msgp.TimeSize + 12 + msgp.IntSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.ByteSize + 5
+	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.ByteSize + 5
 	if z.Hook == nil {
 		s += msgp.NilSize
 	} else {

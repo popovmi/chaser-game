@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"chaser/lib/colors"
-	"chaser/lib/vector"
+	"wars/lib/colors"
+	"wars/lib/vector"
 )
 
 //go:generate msgp
@@ -23,9 +23,7 @@ type Player struct {
 	Name  string      `msg:"name"`
 	Color colors.RGBA `msg:"color"`
 
-	JoinedAt     time.Time `msg:"joined_at"`
-	LastChasedAt time.Time `msg:"last_chased_at"`
-	ChaseCount   int       `msg:"chase_count"`
+	JoinedAt time.Time `msg:"joined_at"`
 
 	Position    vector.Vector2D   `msg:"position"`
 	Velocity    vector.Vector2D   `msg:"velocity"`
@@ -192,8 +190,7 @@ func (p *Player) Touching(p2 *Player) bool {
 }
 
 func (p *Player) Touchable() bool {
-	return time.Since(p.LastChasedAt).Seconds() >= untouchableTime &&
-		time.Since(p.JoinedAt).Seconds() >= untouchableTime
+	return time.Since(p.JoinedAt).Seconds() >= untouchableTime
 }
 
 func (p *Player) CollidePlayer(p2 *Player) {

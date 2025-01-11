@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"chaser/lib/vector"
+	"wars/lib/vector"
 )
 
 //go:generate msgp

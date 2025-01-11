@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/tinylib/msgp/msgp"
-
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 func (srv *server) handleUDPData(addr *net.UDPAddr, data []byte, n int) error {

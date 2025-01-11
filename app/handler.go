@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"time"
 
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 func (c *gameClient) handleMessage(msg messages.Message) error {
@@ -49,12 +49,9 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			return err
 		}
 
-		c.game.ChaserID = state.Game.ChaserID
 		for k, player := range c.game.Players {
 			if updatedPlayer, ok := state.Game.Players[k]; ok {
 				player.JoinedAt = updatedPlayer.JoinedAt
-				player.LastChasedAt = updatedPlayer.LastChasedAt
-				player.ChaseCount = updatedPlayer.ChaseCount
 				player.Position = updatedPlayer.Position
 				player.Velocity = updatedPlayer.Velocity
 				player.Angle = updatedPlayer.Angle
