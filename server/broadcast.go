@@ -8,10 +8,18 @@ import (
 )
 
 func (srv *server) broadcastState() {
-	b, err := messages.New(messages.SrvMsgGameState,
+	b, err := messages.New(
+		messages.SrvMsgGameState,
 		&messages.GameStateMsg{
-			Game: &game.Game{Players: srv.game.Players},
-		}).MarshalMsg(nil)
+			Game: &game.Game{
+				Players: srv.game.Players,
+				PortalNetwork: &game.PortalNetwork{
+					Links: srv.game.PortalNetwork.Links,
+				},
+			},
+		},
+	).MarshalMsg(nil)
+
 	if err != nil {
 		slog.Error("could not marshal state", err.Error())
 		return

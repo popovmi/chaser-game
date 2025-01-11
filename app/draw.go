@@ -168,40 +168,30 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			)
 		}
 		if p.ID == c.clientID {
-			var touching bool
-			for _, link := range c.game.PortalLinks {
-				for _, port := range []*game.Portal{link.P1, link.P2} {
-					if port.Touching(p) {
-						touching = true
+			canUse, portal, _ := c.game.PortalNetwork.CanUsePortal(p)
+			if portal != nil {
+				clr := color.RGBA{R: 0, G: 255, B: 0, A: 255}
+				if !canUse {
+					clr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
-						clr := color.RGBA{R: 0, G: 255, B: 0, A: 255}
-						if time.Since(link.LastUsed[p.ID]).Seconds() < game.PortalCooldown {
-							clr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
-						}
-						vector.StrokeCircle(screen,
-							float32(port.Pos.X-c.cameraX),
-							float32(port.Pos.Y-c.cameraY),
-							game.PortalRadius-5,
-							1, clr, true,
-						)
-						break
-					}
 				}
-				if touching {
-					break
-				}
+				vector.StrokeCircle(screen,
+					float32(portal.Pos.X-c.cameraX),
+					float32(portal.Pos.Y-c.cameraY),
+					game.PortalRadius-5,
+					1, clr, true,
+				)
 			}
+
 		}
 	}
 }
 
 func (c *gameClient) drawPortals() {
-	for _, link := range c.game.PortalLinks {
-		for _, p := range []*game.Portal{link.P1, link.P2} {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(p.Pos.X-game.PortalRadius, p.Pos.Y-game.PortalRadius)
-			c.worldImg.DrawImage(c.portalImg, op)
-		}
+	for _, p := range c.game.PortalNetwork.Portals {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(p.Pos.X-game.PortalRadius, p.Pos.Y-game.PortalRadius)
+		c.worldImg.DrawImage(c.portalImg, op)
 	}
 }
 
@@ -248,12 +238,9 @@ func (c *gameClient) drawSpells(screen *ebiten.Image) {
 	portalText := "Portal: E"
 	strafeText := "Brake:  Shift"
 
-	portalTouching, usedTime := c.game.CanUsePortal(p.ID)
-	portalUsedTime := time.Since(usedTime).Seconds()
-	if portalTouching {
-		if portalUsedTime < game.PortalCooldown {
-			portalText = fmt.Sprintf("Portal: %ds", int(game.PortalCooldown-portalUsedTime))
-		}
+	_, _, cooldown := c.game.PortalNetwork.CanUsePortal(p)
+	if cooldown != nil && cooldown.Seconds() < game.PortalCooldown {
+		portalText = fmt.Sprintf("Portal: %ds", int(game.PortalCooldown-cooldown.Seconds()))
 	}
 
 	blinksUsedTime := time.Since(p.BlinkedAt).Seconds()

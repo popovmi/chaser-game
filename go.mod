@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
+	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/tinylib/msgp v1.2.5
 )
 
@@ -18,9 +19,7 @@ require (
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	golang.org/x/image v0.23.0 // indirect
-	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
 )

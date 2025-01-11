@@ -137,7 +137,7 @@ func (c *gameClient) move(dir string) {
 }
 
 func (c *gameClient) teleport() {
-	_, ok := c.game.Players[c.clientID]
+	p, ok := c.game.Players[c.clientID]
 	if ok {
 		go func() {
 			err := c.sendTCP(messages.ClMsgTeleport)
@@ -145,7 +145,7 @@ func (c *gameClient) teleport() {
 				slog.Error("could not send teleport", "error", err.Error())
 			}
 		}()
-		if c.game.Teleport(c.clientID) {
+		if c.game.PortalNetwork.Teleport(p) {
 			c.audio.playPortal()
 		}
 	}
@@ -192,10 +192,10 @@ func (c *gameClient) brake() {
 }
 
 func (c *gameClient) HandleInput() {
-	if ebiten.IsKeyPressed(ebiten.KeyE) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
 		c.teleport()
 	}
-	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		c.blink()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {

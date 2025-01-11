@@ -142,7 +142,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		srv.broadcastUDP(b)
 
 	case messages.ClMsgTeleport:
-		srv.game.Teleport(c.ID)
+		srv.game.PortalNetwork.Teleport(srv.game.Players[c.ID])
 		portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
 		b, err := messages.New(messages.SrvMsgPlayerTeleported, portedMsg).MarshalMsg(nil)
 		if err != nil {

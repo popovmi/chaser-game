@@ -3,78 +3,93 @@ package game
 import (
 	"time"
 
+	"github.com/matoous/go-nanoid/v2"
+
 	"wars/lib/vector"
 )
 
 //go:generate msgp
 
 type Portal struct {
-	Pos vector.Vector2D `msg:"pos"`
+	ID     string          `msg:"id"`
+	LinkID string          `msg:"link_id"`
+	Pos    vector.Vector2D `msg:"pos"`
 }
 
-func newPortal(x, y float64) *Portal {
-	return &Portal{Pos: vector.Vector2D{X: x, Y: y}}
-}
-
-type PortalLink struct {
-	P1       *Portal              `msg:"p1"`
-	P2       *Portal              `msg:"p2"`
-	LastUsed map[string]time.Time `msg:"lu"`
-}
-
-func NewPortalLink(x1, y1, x2, y2 float64) *PortalLink {
-	return &PortalLink{newPortal(x1, y1), newPortal(x2, y2), make(map[string]time.Time)}
+func newPortal(linkID string, x, y float64) *Portal {
+	id, err := gonanoid.New()
+	if err != nil {
+		panic(err)
+	}
+	return &Portal{id, linkID, vector.Vector2D{X: x, Y: y}}
 }
 
 func (p *Portal) Touching(plr *Player) bool {
 	return p.Pos.Distance(plr.Position) <= (PortalRadius - Radius)
 }
 
-func (p *PortalLink) Touching(plr *Player) bool {
-	return p.P1.Touching(plr) || p.P2.Touching(plr)
+type PortalLink struct {
+	ID        string               `msg:"id"`
+	PortalIDs []string             `msg:"portals"`
+	LastUsed  map[string]time.Time `msg:"lu"`
 }
 
-func (p *PortalLink) GetPortalUsage(plr *Player) (bool, time.Time) {
-	touching := p.Touching(plr)
-	if !touching {
-		return false, time.Time{}
+func newPortalLink() *PortalLink {
+	id, err := gonanoid.New()
+	if err != nil {
+		panic(err)
 	}
-
-	_, usedTimeAgo := p.IsLinkOnCooldown(plr)
-	return touching, usedTimeAgo
+	return &PortalLink{ID: id, LastUsed: make(map[string]time.Time)}
 }
 
-func (p *PortalLink) IsLinkOnCooldown(plr *Player) (bool, time.Time) {
-	if lu, used := p.LastUsed[plr.ID]; used {
-		if time.Since(lu).Seconds() < PortalCooldown {
-			return true, lu
+type PortalNetwork struct {
+	Portals map[string]*Portal     `msg:"portals"`
+	Links   map[string]*PortalLink `msg:"portal_links"`
+}
+
+func newPortalNetwork(portals map[string]*Portal, links map[string]*PortalLink) *PortalNetwork {
+	return &PortalNetwork{portals, links}
+}
+
+func (pn *PortalNetwork) CanUsePortal(player *Player) (bool, *Portal, *time.Duration) {
+	if player.IsHooked {
+		return false, nil, nil
+	}
+	var portal *Portal
+	for _, plr := range pn.Portals {
+		if plr.Touching(player) {
+			portal = plr
+			break
 		}
 	}
-	return false, time.Time{}
+	if portal == nil {
+		return false, nil, nil
+	}
+	link := pn.Links[portal.LinkID]
+	lastUsed, ok := link.LastUsed[player.ID]
+	if !ok {
+		return true, portal, nil
+	}
+	cooldown := time.Since(lastUsed)
+	if cooldown.Seconds() < PortalCooldown {
+		return false, portal, &cooldown
+	}
+	return true, portal, nil
 }
 
-func (p *PortalLink) CollideAndTeleport(plr *Player) bool {
-	isCd, _ := p.IsLinkOnCooldown(plr)
-	if isCd {
+func (pn *PortalNetwork) Teleport(player *Player) bool {
+	can, departure, _ := pn.CanUsePortal(player)
+	if !can {
 		return false
 	}
-	ported := p.P1.CollideAndTeleport(plr, p.P2)
-	if !ported {
-		ported = p.P2.CollideAndTeleport(plr, p.P1)
+	link := pn.Links[departure.LinkID]
+	for _, arrivalID := range link.PortalIDs {
+		if arrivalID != departure.ID {
+			link.LastUsed[player.ID] = time.Now()
+			player.Position.X = pn.Portals[arrivalID].Pos.X
+			player.Position.Y = pn.Portals[arrivalID].Pos.Y
+			return true
+		}
 	}
-	if ported {
-		p.LastUsed[plr.ID] = time.Now()
-	}
-	return ported
-}
-
-func (p *Portal) CollideAndTeleport(plr *Player, dest *Portal) bool {
-	if !p.Touching(plr) {
-		return false
-	}
-
-	plr.Position.X = dest.Pos.X
-	plr.Position.Y = dest.Pos.Y
-
-	return true
+	return false
 }
