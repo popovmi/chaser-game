@@ -97,7 +97,9 @@ func (p *Player) BlinkTick() {
 		if progress >= 0.5 && !p.Blinked {
 			dx, dy := blinkDistance*math.Cos(p.Angle), blinkDistance*math.Sin(p.Angle)
 			p.Position.Add(dx, dy)
-			p.Hook.End.Add(dx, dy)
+			if p.Hook != nil {
+				p.Hook.End.Add(dx, dy)
+			}
 			p.Blinked = true
 		}
 		if progress >= 1 {
