@@ -96,6 +96,7 @@ func (c *gameClient) updateGameScreen() error {
 		} else {
 			delete(c.untouchableTimers, p.ID)
 		}
+		c.playerImages[p.ID].animation.Update()
 	}
 	return nil
 }
@@ -197,7 +198,7 @@ func (c *gameClient) HandleInput() {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		c.blink()
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		c.hook()
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyShift) {

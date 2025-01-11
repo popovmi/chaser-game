@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -21,6 +22,25 @@ var (
 
 	//go:embed assets/portal.png
 	portalBytes []byte
+
+	//go:embed assets/ship/Ship1.png
+	ship1Bytes []byte
+	//go:embed assets/ship/Ship2.png
+	ship2Bytes []byte
+	//go:embed assets/ship/Ship3.png
+	ship3Bytes []byte
+	//go:embed assets/ship/Ship4.png
+	ship4Bytes []byte
+	//go:embed assets/ship/Ship5.png
+	ship5Bytes []byte
+	//go:embed assets/ship/Ship6.png
+	ship6Bytes []byte
+	//go:embed assets/ship/Ship7.png
+	ship7Bytes []byte
+	//go:embed assets/ship/Ship8.png
+	ship8Bytes []byte
+
+	playerSprites = make([]*ebiten.Image, 0)
 )
 
 const faceLength = 30
@@ -60,6 +80,27 @@ func (c *gameClient) createDefaultImages() {
 	c.worldImg = worldImg
 	c.portalImg = portalImg
 	c.brickImg = brickImg
+
+	for _, spriteBytes := range [][]byte{
+		ship1Bytes, ship2Bytes,
+		ship3Bytes, ship4Bytes,
+		ship5Bytes, ship6Bytes,
+		ship7Bytes, ship8Bytes,
+	} {
+		shipSprite, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(spriteBytes))
+		if err != nil {
+			panic(err)
+		}
+		spriteImg := ebiten.NewImage(2*game.Radius, 2*game.Radius)
+		op := &ebiten.DrawImageOptions{}
+		scale := 2 * game.Radius / float64(shipSprite.Bounds().Dx())
+		op.GeoM.Scale(scale, scale)
+		op.GeoM.Translate(-game.Radius, -game.Radius)
+		op.GeoM.Rotate(-math.Pi / 2)
+		op.GeoM.Translate(game.Radius, game.Radius)
+		spriteImg.DrawImage(shipSprite, op)
+		playerSprites = append(playerSprites, spriteImg)
+	}
 }
 
 func (c *gameClient) CreatePlayerImages(p *game.Player) {
@@ -86,7 +127,8 @@ func (c *gameClient) CreatePlayerImages(p *game.Player) {
 	)
 	drawEyes(chaseImg, float32(game.Radius), float32(game.Radius))
 
-	c.playerImages[p.ID] = &playerImg{baseImg, chaseImg}
+	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
+	c.playerImages[p.ID] = &playerImg{animation, baseImg, chaseImg}
 }
 
 func drawEyes(img *ebiten.Image, cx, cy float32) {

@@ -28,8 +28,9 @@ const (
 )
 
 type playerImg struct {
-	baseImg  *ebiten.Image
-	chaseImg *ebiten.Image
+	animation *Animation
+	baseImg   *ebiten.Image
+	chaseImg  *ebiten.Image
 }
 
 type untouchableTimer struct {
