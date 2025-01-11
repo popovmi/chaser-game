@@ -118,6 +118,7 @@ func (p *Player) Rotate(dt float64) {
 
 		p.Angle += angle
 		p.Angle = math.Mod(p.Angle, 2*math.Pi)
+		p.RotateHook(angle)
 	}
 }
 
@@ -214,7 +215,8 @@ func (p *Player) Touching(p2 *Player) bool {
 }
 
 func (p *Player) Touchable() bool {
-	return time.Since(p.JoinedAt).Seconds() >= untouchableTime && time.Since(p.RespawnedAt).Seconds() >= untouchableTime
+	return time.Since(p.JoinedAt).Seconds() >= untouchableTime &&
+		time.Since(p.RespawnedAt).Seconds() >= untouchableTime
 }
 
 func (p *Player) CollidePlayer(p2 *Player) {

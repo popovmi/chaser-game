@@ -86,6 +86,7 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
 		img := c.playerImages[p.ID].animation.Image()
+		//img := c.playerImages[p.ID].baseImg
 		w, h := float64(img.Bounds().Dx()), float64(img.Bounds().Dy())
 
 		lineSpacing := 1.1
@@ -98,12 +99,10 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		textOp.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
 		textOp.LineSpacing = 1.1
 		textOp.GeoM.Translate(-c.cameraX, -c.cameraY)
-		textOp.GeoM.Translate(p.Position.X-textW/2, p.Position.Y-game.Radius-textH)
+		textOp.GeoM.Translate(p.Position.X-textW/2, p.Position.Y+game.Radius)
 		text.Draw(screen, nameStr, FontFaceBold18, textOp)
 
 		options := &ebiten.DrawImageOptions{}
-		options.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
-		options.ColorScale.ScaleWithColor(color.White)
 		options.GeoM.Translate(-w/2, -h+game.Radius)
 		options.GeoM.Rotate(p.Angle)
 		options.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
@@ -147,7 +146,7 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 				screen,
 				shiftedStartX, shiftedStartY,
 				shiftedEndX, shiftedEndY,
-				5,
+				3,
 				p.Color.ToColorRGBA(),
 				true,
 			)
