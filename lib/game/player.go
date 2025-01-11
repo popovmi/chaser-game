@@ -123,7 +123,6 @@ func (p *Player) Rotate(dt float64) {
 
 		p.Angle += angle
 		p.Angle = math.Mod(p.Angle, 2*math.Pi)
-		p.RotateHook()
 	}
 }
 

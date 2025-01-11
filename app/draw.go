@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"math"
 	"sort"
 	"time"
 
@@ -157,7 +158,11 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			hookOp := &ebiten.DrawImageOptions{}
 			hookLength := p.HookLength() / game.MaxHookLength
 			hookOp.GeoM.Scale(hookLength, 1)
-			hookOp.GeoM.Rotate(p.Angle)
+			angle := p.Angle
+			if p.Hook.Stuck {
+				angle = math.Atan2(p.Hook.End.Y-p.Position.Y, p.Hook.End.X-p.Position.X)
+			}
+			hookOp.GeoM.Rotate(angle)
 			hookOp.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
 			screen.DrawImage(hookImg, hookOp)
 		}

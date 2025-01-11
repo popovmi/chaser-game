@@ -102,7 +102,7 @@ func main() {
 	ebiten.SetWindowTitle("WARS")
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetVsyncEnabled(true)
+	ebiten.SetFullscreen(true)
 	if err := ebiten.RunGame(c); err != nil {
 		log.Fatal(err)
 	}

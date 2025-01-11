@@ -10,12 +10,11 @@ import (
 //go:generate msgp
 
 type Hook struct {
-	End             vector.Vector2D `msg:"end"`
-	Vel             vector.Vector2D `msg:"vel"`
-	CurrentDistance float64         `msg:"current_distance"`
-	Stuck           bool            `msg:"stuck"`
-	IsReturning     bool            `msg:"is_returning"`
-	CaughtPlayerID  string          `msg:"caught_player_id"`
+	End            vector.Vector2D `msg:"end"`
+	Vel            vector.Vector2D `msg:"vel"`
+	Stuck          bool            `msg:"stuck"`
+	IsReturning    bool            `msg:"is_returning"`
+	CaughtPlayerID string          `msg:"caught_player_id"`
 }
 
 func (p *Player) HookTick(dt float64, players map[string]*Player) {
@@ -106,9 +105,6 @@ func (h *Hook) Clamp() {
 	if h.End.Y > FieldHeight {
 		h.End.Y = FieldHeight
 		h.Stuck = true
-	}
-	if h.Stuck {
-		h.IsReturning = true
 	}
 }
 
