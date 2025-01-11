@@ -8,10 +8,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinylib/msgp/msgp"
 
-	"chaser/app/components"
-	"chaser/lib/colors"
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	"wars/app/components"
+	"wars/lib/colors"
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 const (
@@ -30,7 +30,6 @@ const (
 type playerImg struct {
 	animation *Animation
 	baseImg   *ebiten.Image
-	chaseImg  *ebiten.Image
 }
 
 type untouchableTimer struct {
@@ -57,6 +56,8 @@ type gameClient struct {
 	worldImg          *ebiten.Image
 	portalImg         *ebiten.Image
 	brickImg          *ebiten.Image
+	healthImg         *ebiten.Image
+	healthFillImg     *ebiten.Image
 	playerImages      map[string]*playerImg
 	untouchableTimers map[string]*untouchableTimer
 
@@ -95,7 +96,7 @@ func main() {
 		}
 	}()
 
-	ebiten.SetWindowTitle("Chaser")
+	ebiten.SetWindowTitle("WARS")
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetVsyncEnabled(true)

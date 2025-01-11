@@ -2,7 +2,6 @@ package game
 
 import (
 	"math"
-	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -12,7 +11,6 @@ import (
 
 type Game struct {
 	Players     map[string]*Player `msg:"players"`
-	ChaserID    string             `msg:"chaserID"`
 	PortalLinks []*PortalLink      `msg:"portalLinks"`
 	Bricks      []*Brick           `msg:"bricks"`
 
@@ -84,10 +82,6 @@ func (g *Game) AddPlayer(p *Player) {
 	g.findFreeSpot(p)
 	g.Players[p.ID] = p
 	p.JoinedAt = time.Now()
-
-	if len(g.Players) == 1 {
-		g.setChaser(p)
-	}
 }
 
 func (g *Game) findFreeSpot(np *Player) {
@@ -103,7 +97,7 @@ func (g *Game) findFreeSpot(np *Player) {
 			np.Position.Y = y
 			intersects := false
 			for _, p := range g.Players {
-				if np.Touching(p) {
+				if p.ID != np.ID && np.Touching(p) {
 					intersects = true
 					break
 				}
@@ -116,18 +110,7 @@ func (g *Game) findFreeSpot(np *Player) {
 }
 
 func (g *Game) RemovePlayer(id string) {
-	p := g.Players[id]
 	delete(g.Players, id)
-	if pV := reflect.ValueOf(p); !pV.IsNil() && p.ID == g.ChaserID {
-		if len(g.Players) == 0 {
-			g.ChaserID = ""
-		} else {
-			for _, p := range g.Players {
-				g.setChaser(p)
-				break
-			}
-		}
-	}
 }
 
 func (g *Game) Tick() (map[string]bool, map[string]bool) {
@@ -135,6 +118,9 @@ func (g *Game) Tick() (map[string]bool, map[string]bool) {
 	dt := now - g.PreviousTick
 
 	for _, p := range g.Players {
+		if p.Status == PlayerStatusDead {
+			g.RespawnPlayer(p)
+		}
 		p.Tick(float64(dt)/1000, g.Players)
 	}
 
@@ -163,25 +149,11 @@ func (g *Game) detectCollisions() (map[string]bool, map[string]bool) {
 					touches[p2.ID] = true
 
 					p1.CollidePlayer(p2)
-
-					if p1.ID == g.ChaserID {
-						g.setChaser(p2)
-					} else if p2.ID == g.ChaserID {
-						g.setChaser(p1)
-					}
 				}
 			}
 		}
 	}
 	return wallHits, touches
-}
-
-func (g *Game) setChaser(p *Player) {
-	if previousChaser, exists := g.Players[g.ChaserID]; exists {
-		previousChaser.LastChasedAt = time.Now()
-	}
-	g.ChaserID = p.ID
-	p.ChaseCount++
 }
 
 func (g *Game) Teleport(id string) bool {
@@ -212,4 +184,11 @@ func (g *Game) CanUsePortal(id string) (bool, time.Time) {
 		}
 	}
 	return false, time.Time{}
+}
+
+func (g *Game) RespawnPlayer(p *Player) {
+	g.findFreeSpot(p)
+	p.RespawnedAt = time.Now()
+	p.HP = MaxHP
+	p.Status = PlayerStatusAlive
 }

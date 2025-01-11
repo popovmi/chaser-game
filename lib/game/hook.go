@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"chaser/lib/vector"
+	"wars/lib/vector"
 )
 
 //go:generate msgp
@@ -12,10 +12,10 @@ import (
 type Hook struct {
 	End             vector.Vector2D `msg:"end"`
 	Vel             vector.Vector2D `msg:"vel"`
-	CurrentDistance float64         `msg:"current_distance,omitempty"`
-	Stuck           bool            `msg:"stuck,omitempty"`
-	IsReturning     bool            `msg:"is_returning,omitempty"`
-	CaughtPlayerID  string          `msg:"caught_player_id,omitempty"`
+	CurrentDistance float64         `msg:"current_distance"`
+	Stuck           bool            `msg:"stuck"`
+	IsReturning     bool            `msg:"is_returning"`
+	CaughtPlayerID  string          `msg:"caught_player_id"`
 }
 
 func (p *Player) HookTick(dt float64, players map[string]*Player) {
@@ -123,23 +123,36 @@ func (h *Hook) Clamp() {
 
 func (p *Player) HookPlayer(players map[string]*Player) bool {
 	for _, target := range players {
-		if target.ID == p.ID {
+		if target.ID == p.ID || !target.Touchable() {
 			continue
 		}
 
 		distance := target.Position.Distance(p.Hook.End)
-
 		if distance < Radius {
-			p.Hook.CaughtPlayerID = target.ID
-			p.Hook.IsReturning = true
-			target.IsHooked = true
-			target.CaughtByID = p.ID
-			target.Velocity.X = 0
-			target.Velocity.Y = 0
-			target.MoveDir = ""
+			target.takeHookHit(p)
 			return true
 		}
 	}
 
 	return false
+}
+
+func (p *Player) takeHookHit(hookedPlayer *Player) {
+	p.HP -= hookDamage
+	if p.HP <= 0 {
+		p.die()
+		hookedPlayer.Kills += 1
+		hookedPlayer.Hook.CaughtPlayerID = ""
+		hookedPlayer.Hook.IsReturning = true
+		return
+	}
+
+	hookedPlayer.Hook.CaughtPlayerID = p.ID
+	hookedPlayer.Hook.IsReturning = true
+	p.IsHooked = true
+	p.CaughtByID = hookedPlayer.ID
+	p.Velocity.X = 0
+	p.Velocity.Y = 0
+	p.MoveDir = ""
+
 }

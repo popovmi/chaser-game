@@ -5,12 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"chaser/lib/colors"
-	"chaser/lib/vector"
+	"wars/lib/colors"
+	"wars/lib/vector"
 )
 
 //go:generate msgp
-type RotationDirection byte
+
+//msgp:replace RotationDirection with:int
+type RotationDirection int
 
 const (
 	RotationNone RotationDirection = iota
@@ -18,14 +20,29 @@ const (
 	RotationNegative
 )
 
+//msgp:replace RotationDirection with:int
+type PlayerStatus int
+
+const (
+	PlayerStatusAlive PlayerStatus = iota
+	PlayerStatusDead
+)
+
 type Player struct {
 	ID    string      `msg:"id"`
 	Name  string      `msg:"name"`
 	Color colors.RGBA `msg:"color"`
 
-	JoinedAt     time.Time `msg:"joined_at"`
-	LastChasedAt time.Time `msg:"last_chased_at"`
-	ChaseCount   int       `msg:"chase_count"`
+	JoinedAt time.Time `msg:"joined_at"`
+
+	Status PlayerStatus `msg:"status"`
+	HP     float64      `msg:"hp"`
+
+	Kills  int `msg:"kills"`
+	Deaths int `msg:"deaths"`
+
+	DeadAt      time.Time `msg:"dead_at"`
+	RespawnedAt time.Time `msg:"respawned_at"`
 
 	Position    vector.Vector2D   `msg:"position"`
 	Velocity    vector.Vector2D   `msg:"velocity"`
@@ -51,14 +68,19 @@ func NewPlayer(id string) *Player {
 		Position: vector.NewVector2D(0, 0),
 		Velocity: vector.NewVector2D(0, 0),
 		Angle:    0,
+		HP:       MaxHP,
+		Status:   PlayerStatusAlive,
 	}
 }
 
 func (p *Player) Tick(dt float64, players map[string]*Player) {
+	if p.Status == PlayerStatusDead {
+		return
+	}
+	p.BlinkTick()
 	if !p.IsHooked {
 		p.Friction(dt)
 		p.HookTick(dt, players)
-		p.BlinkTick()
 		p.Rotate(dt)
 
 		if p.Hook == nil || !p.Hook.Stuck {
@@ -183,7 +205,7 @@ func (p *Player) HandleMove(dir string) {
 	p.MoveDir = dir
 }
 
-func (p *Player) HandleTurn(dir RotationDirection) {
+func (p *Player) HandleRotate(dir RotationDirection) {
 	p.RotationDir = dir
 }
 
@@ -192,8 +214,7 @@ func (p *Player) Touching(p2 *Player) bool {
 }
 
 func (p *Player) Touchable() bool {
-	return time.Since(p.LastChasedAt).Seconds() >= untouchableTime &&
-		time.Since(p.JoinedAt).Seconds() >= untouchableTime
+	return time.Since(p.JoinedAt).Seconds() >= untouchableTime && time.Since(p.RespawnedAt).Seconds() >= untouchableTime
 }
 
 func (p *Player) CollidePlayer(p2 *Player) {
@@ -238,4 +259,16 @@ func (p *Player) CollidePlayer(p2 *Player) {
 func (p *Player) Brake() {
 	p.MoveDir = ""
 	p.Velocity.Mul(Braking)
+}
+
+func (p *Player) die() {
+	p.Status = PlayerStatusDead
+	p.DeadAt = time.Now()
+	p.Deaths += 1
+	p.IsHooked = false
+	p.CaughtByID = ""
+	p.Velocity = vector.NewVector2D(0, 0)
+	p.Blinking = false
+	p.Blinked = false
+	p.Hook = nil
 }

@@ -2,8 +2,8 @@ package game
 
 import (
 	"math"
-
-	"chaser/lib/vector"
+	
+	"wars/lib/vector"
 )
 
 //go:generate msgp

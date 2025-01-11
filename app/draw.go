@@ -10,8 +10,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"chaser/lib/colors"
-	"chaser/lib/game"
+	"wars/lib/colors"
+	"wars/lib/game"
 )
 
 const lineSpacing = 1.1
@@ -73,7 +73,6 @@ func (c *gameClient) drawMain(screen *ebiten.Image) {
 func (c *gameClient) drawGame(screen *ebiten.Image) {
 	c.drawWorld(screen)
 	c.drawSpells(screen)
-	c.drawChaser(screen)
 	c.drawPlayerList(screen)
 	c.drawPlayers(screen)
 }
@@ -86,12 +85,7 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
-		isChaser := c.game.ChaserID == p.ID
 		img := c.playerImages[p.ID].animation.Image()
-		//img := c.playerImages[p.ID].baseImg
-		//if isChaser {
-		//	img = c.playerImages[p.ID].chaseImg
-		//}
 		w, h := float64(img.Bounds().Dx()), float64(img.Bounds().Dy())
 
 		lineSpacing := 1.1
@@ -114,11 +108,9 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		options.GeoM.Rotate(p.Angle)
 		options.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
 
-		if !isChaser {
-			if ut, ok := c.untouchableTimers[p.ID]; ok {
-				if !ut.visible {
-					options.ColorScale.ScaleAlpha(0)
-				}
+		if ut, ok := c.untouchableTimers[p.ID]; ok {
+			if !ut.visible {
+				options.ColorScale.ScaleAlpha(0)
 			}
 		}
 
@@ -133,6 +125,17 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			options.ColorScale.ScaleAlpha(alpha)
 		}
 		screen.DrawImage(img, options)
+
+		hpOp := &ebiten.DrawImageOptions{}
+		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+		screen.DrawImage(c.healthImg, hpOp)
+		hpWidth := (p.HP / game.MaxHP) * 50
+		hpOp.GeoM.Reset()
+		hpOp.GeoM.Scale(hpWidth/50, 1)
+		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+		screen.DrawImage(c.healthFillImg, hpOp)
 
 		if p.Hook != nil {
 			shiftedStartX := float32(p.Position.X) - float32(c.cameraX)
@@ -192,18 +195,6 @@ func (c *gameClient) drawBricks() {
 	}
 }
 
-func (c *gameClient) drawChaser(screen *ebiten.Image) {
-	chaser := c.game.Players[c.game.ChaserID]
-	label := fmt.Sprintf("Chaser: %s", chaser.Name)
-	textW, textH := text.Measure(label, FontFace18, lineSpacing)
-	middleW, middleH := float64(c.windowW/2), 25.0
-	textOp := &text.DrawOptions{}
-	textOp.LineSpacing = lineSpacing
-	textOp.GeoM.Translate(middleW-textW/2, middleH-textH)
-	textOp.ColorScale.ScaleWithColor(chaser.Color.ToColorRGBA())
-	text.Draw(screen, label, FontFace18, textOp)
-}
-
 func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 	sorted := make([]*game.Player, 0)
 	for _, v := range c.game.Players {
@@ -215,8 +206,8 @@ func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 
 	i := 1
 	for _, player := range sorted {
-		playerStr := fmt.Sprintf("%s | %dm | %d", player.Name, int(time.Since(player.JoinedAt).Minutes()),
-			player.ChaseCount)
+		playerStr := fmt.Sprintf("%s | %d | %d | %dm", player.Name, player.Kills, player.Deaths,
+			int(time.Since(player.JoinedAt).Minutes()))
 		textW, textH := text.Measure(playerStr, FontFace18, lineSpacing)
 		op := &text.DrawOptions{}
 		op.LineSpacing = lineSpacing

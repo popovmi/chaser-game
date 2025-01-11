@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/tinylib/msgp/msgp"
-
-	"chaser/lib/colors"
-	"chaser/lib/game"
-	"chaser/lib/messages"
+	
+	"wars/lib/colors"
+	"wars/lib/game"
+	"wars/lib/messages"
 )
 
 func getColors() map[colors.RGBA]bool {

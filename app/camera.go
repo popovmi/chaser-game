@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chaser/lib/game"
+	"wars/lib/game"
 )
 
 func (c *gameClient) moveCamera() {

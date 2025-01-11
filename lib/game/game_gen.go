@@ -66,12 +66,6 @@ func (z *Game) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "chaserID":
-			z.ChaserID, err = dc.ReadString()
-			if err != nil {
-				err = msgp.WrapError(err, "ChaserID")
-				return
-			}
 		case "portalLinks":
 			var zb0003 uint32
 			zb0003, err = dc.ReadArrayHeader()
@@ -147,9 +141,9 @@ func (z *Game) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 4
+	// map header, size 3
 	// write "players"
-	err = en.Append(0x84, 0xa7, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73)
+	err = en.Append(0x83, 0xa7, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73)
 	if err != nil {
 		return
 	}
@@ -176,16 +170,6 @@ func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
 				return
 			}
 		}
-	}
-	// write "chaserID"
-	err = en.Append(0xa8, 0x63, 0x68, 0x61, 0x73, 0x65, 0x72, 0x49, 0x44)
-	if err != nil {
-		return
-	}
-	err = en.WriteString(z.ChaserID)
-	if err != nil {
-		err = msgp.WrapError(err, "ChaserID")
-		return
 	}
 	// write "portalLinks"
 	err = en.Append(0xab, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4c, 0x69, 0x6e, 0x6b, 0x73)
@@ -241,9 +225,9 @@ func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Game) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 4
+	// map header, size 3
 	// string "players"
-	o = append(o, 0x84, 0xa7, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73)
+	o = append(o, 0x83, 0xa7, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Players)))
 	for za0001, za0002 := range z.Players {
 		o = msgp.AppendString(o, za0001)
@@ -257,9 +241,6 @@ func (z *Game) MarshalMsg(b []byte) (o []byte, err error) {
 			}
 		}
 	}
-	// string "chaserID"
-	o = append(o, 0xa8, 0x63, 0x68, 0x61, 0x73, 0x65, 0x72, 0x49, 0x44)
-	o = msgp.AppendString(o, z.ChaserID)
 	// string "portalLinks"
 	o = append(o, 0xab, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4c, 0x69, 0x6e, 0x6b, 0x73)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.PortalLinks)))
@@ -350,12 +331,6 @@ func (z *Game) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "chaserID":
-			z.ChaserID, bts, err = msgp.ReadStringBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "ChaserID")
-				return
-			}
 		case "portalLinks":
 			var zb0003 uint32
 			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
@@ -442,7 +417,7 @@ func (z *Game) Msgsize() (s int) {
 			}
 		}
 	}
-	s += 9 + msgp.StringPrefixSize + len(z.ChaserID) + 12 + msgp.ArrayHeaderSize
+	s += 12 + msgp.ArrayHeaderSize
 	for za0003 := range z.PortalLinks {
 		if z.PortalLinks[za0003] == nil {
 			s += msgp.NilSize

@@ -3,7 +3,7 @@ package messages
 import (
 	"github.com/tinylib/msgp/msgp"
 
-	"chaser/lib/game"
+	"wars/lib/game"
 )
 
 //go:generate msgp
@@ -27,7 +27,7 @@ const (
 	SrvMsgPlayerJoined
 	SrvMsgGameState
 	SrvMsgPlayerMoved
-	SrvMsgPlayerTurned
+	SrvMsgPlayerRotated
 	SrvMsgPlayerBraked
 	SrvMsgPlayerTeleported
 	SrvMsgPlayerBlinked
@@ -81,7 +81,7 @@ type PlayerMovedMsg struct {
 	Dir string `msg:"dir"`
 }
 
-type PlayerTurnedMsg struct {
+type PlayerRotatedMsg struct {
 	ID  string                 `msg:"id"`
 	Dir game.RotationDirection `msg:"dir"`
 }

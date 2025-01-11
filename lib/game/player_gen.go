@@ -48,16 +48,44 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "JoinedAt")
 				return
 			}
-		case "last_chased_at":
-			z.LastChasedAt, err = dc.ReadTime()
+		case "status":
+			{
+				var zb0002 int
+				zb0002, err = dc.ReadInt()
+				if err != nil {
+					err = msgp.WrapError(err, "Status")
+					return
+				}
+				z.Status = PlayerStatus(zb0002)
+			}
+		case "hp":
+			z.HP, err = dc.ReadFloat64()
 			if err != nil {
-				err = msgp.WrapError(err, "LastChasedAt")
+				err = msgp.WrapError(err, "HP")
 				return
 			}
-		case "chase_count":
-			z.ChaseCount, err = dc.ReadInt()
+		case "kills":
+			z.Kills, err = dc.ReadInt()
 			if err != nil {
-				err = msgp.WrapError(err, "ChaseCount")
+				err = msgp.WrapError(err, "Kills")
+				return
+			}
+		case "deaths":
+			z.Deaths, err = dc.ReadInt()
+			if err != nil {
+				err = msgp.WrapError(err, "Deaths")
+				return
+			}
+		case "dead_at":
+			z.DeadAt, err = dc.ReadTime()
+			if err != nil {
+				err = msgp.WrapError(err, "DeadAt")
+				return
+			}
+		case "respawned_at":
+			z.RespawnedAt, err = dc.ReadTime()
+			if err != nil {
+				err = msgp.WrapError(err, "RespawnedAt")
 				return
 			}
 		case "position":
@@ -86,13 +114,13 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 			}
 		case "turn_dir":
 			{
-				var zb0002 byte
-				zb0002, err = dc.ReadByte()
+				var zb0003 int
+				zb0003, err = dc.ReadInt()
 				if err != nil {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0002)
+				z.RotationDir = RotationDirection(zb0003)
 			}
 		case "hook":
 			if dc.IsNil() {
@@ -161,9 +189,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 18
+	// map header, size 22
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x12, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x16, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -202,24 +230,64 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "JoinedAt")
 		return
 	}
-	// write "last_chased_at"
-	err = en.Append(0xae, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	// write "status"
+	err = en.Append(0xa6, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73)
 	if err != nil {
 		return
 	}
-	err = en.WriteTime(z.LastChasedAt)
+	err = en.WriteInt(int(z.Status))
 	if err != nil {
-		err = msgp.WrapError(err, "LastChasedAt")
+		err = msgp.WrapError(err, "Status")
 		return
 	}
-	// write "chase_count"
-	err = en.Append(0xab, 0x63, 0x68, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74)
+	// write "hp"
+	err = en.Append(0xa2, 0x68, 0x70)
 	if err != nil {
 		return
 	}
-	err = en.WriteInt(z.ChaseCount)
+	err = en.WriteFloat64(z.HP)
 	if err != nil {
-		err = msgp.WrapError(err, "ChaseCount")
+		err = msgp.WrapError(err, "HP")
+		return
+	}
+	// write "kills"
+	err = en.Append(0xa5, 0x6b, 0x69, 0x6c, 0x6c, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.Kills)
+	if err != nil {
+		err = msgp.WrapError(err, "Kills")
+		return
+	}
+	// write "deaths"
+	err = en.Append(0xa6, 0x64, 0x65, 0x61, 0x74, 0x68, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.Deaths)
+	if err != nil {
+		err = msgp.WrapError(err, "Deaths")
+		return
+	}
+	// write "dead_at"
+	err = en.Append(0xa7, 0x64, 0x65, 0x61, 0x64, 0x5f, 0x61, 0x74)
+	if err != nil {
+		return
+	}
+	err = en.WriteTime(z.DeadAt)
+	if err != nil {
+		err = msgp.WrapError(err, "DeadAt")
+		return
+	}
+	// write "respawned_at"
+	err = en.Append(0xac, 0x72, 0x65, 0x73, 0x70, 0x61, 0x77, 0x6e, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	if err != nil {
+		return
+	}
+	err = en.WriteTime(z.RespawnedAt)
+	if err != nil {
+		err = msgp.WrapError(err, "RespawnedAt")
 		return
 	}
 	// write "position"
@@ -267,7 +335,7 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteByte(byte(z.RotationDir))
+	err = en.WriteInt(int(z.RotationDir))
 	if err != nil {
 		err = msgp.WrapError(err, "RotationDir")
 		return
@@ -355,9 +423,9 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 18
+	// map header, size 22
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x12, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x16, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -372,12 +440,24 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "joined_at"
 	o = append(o, 0xa9, 0x6a, 0x6f, 0x69, 0x6e, 0x65, 0x64, 0x5f, 0x61, 0x74)
 	o = msgp.AppendTime(o, z.JoinedAt)
-	// string "last_chased_at"
-	o = append(o, 0xae, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
-	o = msgp.AppendTime(o, z.LastChasedAt)
-	// string "chase_count"
-	o = append(o, 0xab, 0x63, 0x68, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74)
-	o = msgp.AppendInt(o, z.ChaseCount)
+	// string "status"
+	o = append(o, 0xa6, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73)
+	o = msgp.AppendInt(o, int(z.Status))
+	// string "hp"
+	o = append(o, 0xa2, 0x68, 0x70)
+	o = msgp.AppendFloat64(o, z.HP)
+	// string "kills"
+	o = append(o, 0xa5, 0x6b, 0x69, 0x6c, 0x6c, 0x73)
+	o = msgp.AppendInt(o, z.Kills)
+	// string "deaths"
+	o = append(o, 0xa6, 0x64, 0x65, 0x61, 0x74, 0x68, 0x73)
+	o = msgp.AppendInt(o, z.Deaths)
+	// string "dead_at"
+	o = append(o, 0xa7, 0x64, 0x65, 0x61, 0x64, 0x5f, 0x61, 0x74)
+	o = msgp.AppendTime(o, z.DeadAt)
+	// string "respawned_at"
+	o = append(o, 0xac, 0x72, 0x65, 0x73, 0x70, 0x61, 0x77, 0x6e, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	o = msgp.AppendTime(o, z.RespawnedAt)
 	// string "position"
 	o = append(o, 0xa8, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e)
 	o, err = z.Position.MarshalMsg(o)
@@ -400,7 +480,7 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendString(o, z.MoveDir)
 	// string "turn_dir"
 	o = append(o, 0xa8, 0x74, 0x75, 0x72, 0x6e, 0x5f, 0x64, 0x69, 0x72)
-	o = msgp.AppendByte(o, byte(z.RotationDir))
+	o = msgp.AppendInt(o, int(z.RotationDir))
 	// string "hook"
 	o = append(o, 0xa4, 0x68, 0x6f, 0x6f, 0x6b)
 	if z.Hook == nil {
@@ -475,16 +555,44 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "JoinedAt")
 				return
 			}
-		case "last_chased_at":
-			z.LastChasedAt, bts, err = msgp.ReadTimeBytes(bts)
+		case "status":
+			{
+				var zb0002 int
+				zb0002, bts, err = msgp.ReadIntBytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Status")
+					return
+				}
+				z.Status = PlayerStatus(zb0002)
+			}
+		case "hp":
+			z.HP, bts, err = msgp.ReadFloat64Bytes(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "LastChasedAt")
+				err = msgp.WrapError(err, "HP")
 				return
 			}
-		case "chase_count":
-			z.ChaseCount, bts, err = msgp.ReadIntBytes(bts)
+		case "kills":
+			z.Kills, bts, err = msgp.ReadIntBytes(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "ChaseCount")
+				err = msgp.WrapError(err, "Kills")
+				return
+			}
+		case "deaths":
+			z.Deaths, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Deaths")
+				return
+			}
+		case "dead_at":
+			z.DeadAt, bts, err = msgp.ReadTimeBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "DeadAt")
+				return
+			}
+		case "respawned_at":
+			z.RespawnedAt, bts, err = msgp.ReadTimeBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "RespawnedAt")
 				return
 			}
 		case "position":
@@ -513,13 +621,13 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			}
 		case "turn_dir":
 			{
-				var zb0002 byte
-				zb0002, bts, err = msgp.ReadByteBytes(bts)
+				var zb0003 int
+				zb0003, bts, err = msgp.ReadIntBytes(bts)
 				if err != nil {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0002)
+				z.RotationDir = RotationDirection(zb0003)
 			}
 		case "hook":
 			if msgp.IsNil(bts) {
@@ -588,7 +696,7 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Player) Msgsize() (s int) {
-	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 15 + msgp.TimeSize + 12 + msgp.IntSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.ByteSize + 5
+	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 5
 	if z.Hook == nil {
 		s += msgp.NilSize
 	} else {
@@ -599,10 +707,62 @@ func (z *Player) Msgsize() (s int) {
 }
 
 // DecodeMsg implements msgp.Decodable
+func (z *PlayerStatus) DecodeMsg(dc *msgp.Reader) (err error) {
+	{
+		var zb0001 int
+		zb0001, err = dc.ReadInt()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = PlayerStatus(zb0001)
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z PlayerStatus) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteInt(int(z))
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z PlayerStatus) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendInt(o, int(z))
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *PlayerStatus) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 int
+		zb0001, bts, err = msgp.ReadIntBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = PlayerStatus(zb0001)
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z PlayerStatus) Msgsize() (s int) {
+	s = msgp.IntSize
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *RotationDirection) DecodeMsg(dc *msgp.Reader) (err error) {
 	{
-		var zb0001 byte
-		zb0001, err = dc.ReadByte()
+		var zb0001 int
+		zb0001, err = dc.ReadInt()
 		if err != nil {
 			err = msgp.WrapError(err)
 			return
@@ -614,7 +774,7 @@ func (z *RotationDirection) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z RotationDirection) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteByte(byte(z))
+	err = en.WriteInt(int(z))
 	if err != nil {
 		err = msgp.WrapError(err)
 		return
@@ -625,15 +785,15 @@ func (z RotationDirection) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z RotationDirection) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendByte(o, byte(z))
+	o = msgp.AppendInt(o, int(z))
 	return
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *RotationDirection) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	{
-		var zb0001 byte
-		zb0001, bts, err = msgp.ReadByteBytes(bts)
+		var zb0001 int
+		zb0001, bts, err = msgp.ReadIntBytes(bts)
 		if err != nil {
 			err = msgp.WrapError(err)
 			return
@@ -646,6 +806,6 @@ func (z *RotationDirection) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z RotationDirection) Msgsize() (s int) {
-	s = msgp.ByteSize
+	s = msgp.IntSize
 	return
 }
