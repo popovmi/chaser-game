@@ -85,15 +85,35 @@ func (pn *PortalNetwork) Teleport(player *Player) bool {
 	link := pn.Links[departure.LinkID]
 	for _, arrivalID := range link.PortalIDs {
 		if arrivalID != departure.ID {
+			player.Teleporting = true
+			player.DepPortalID = departure.ID
+			player.ArrPortalID = arrivalID
 			link.LastUsed[player.ID] = time.Now()
-			dx := pn.Portals[arrivalID].Pos.X - player.Position.X
-			dy := pn.Portals[arrivalID].Pos.Y - player.Position.Y
-			player.Position.Add(dx, dy)
-			if player.Hook != nil {
-				player.Hook.End.Add(dx, dy)
-			}
 			return true
 		}
 	}
 	return false
+}
+
+func (pn *PortalNetwork) TeleportTick(player *Player) {
+	if !player.Teleporting {
+		return
+	}
+	depPort := pn.Portals[player.DepPortalID]
+	arrPort := pn.Portals[player.ArrPortalID]
+	link := pn.Links[depPort.LinkID]
+	progress := time.Since(link.LastUsed[player.ID]).Seconds() / TeleportDuration
+	if progress >= 0.5 && !player.Teleported {
+		dx := arrPort.Pos.X - player.Position.X
+		dy := arrPort.Pos.Y - player.Position.Y
+		player.Position.Add(dx, dy)
+		if player.Hook != nil {
+			player.Hook.End.Add(dx, dy)
+		}
+		player.Teleported = true
+	}
+	if progress >= 1 {
+		player.Teleporting = false
+		player.Teleported = false
+	}
 }

@@ -3,13 +3,14 @@ package game
 import "math"
 
 const (
-	FieldWidth  = 2000
-	FieldHeight = 1500
+	FieldWidth  = 3200
+	FieldHeight = 2400
 
 	Radius = 30
 
-	PortalRadius   = 75
-	PortalCooldown = 5.0
+	PortalRadius     = 75
+	TeleportDuration = 0.8
+	PortalCooldown   = 3.0 + TeleportDuration
 
 	turnAngle     = math.Pi * 1.5
 	moveTurnAngle = math.Pi * 1

@@ -60,6 +60,11 @@ type Player struct {
 	BlinkedAt time.Time `msg:"blinked_at"`
 	Blinked   bool      `msg:"blinked"`
 
+	Teleporting bool   `msg:"teleporting"`
+	DepPortalID string `msg:"dep_portal_id"`
+	ArrPortalID string `msg:"arr_portal_id"`
+	Teleported  bool   `msg:"teleported"`
+
 	mu sync.Mutex
 }
 
@@ -79,7 +84,7 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 		return
 	}
 	p.BlinkTick()
-	if !p.IsHooked {
+	if !p.IsHooked && !p.Teleporting {
 		p.Friction(dt)
 		p.HookTick(dt, players)
 		p.Rotate(dt)

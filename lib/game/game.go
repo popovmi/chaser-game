@@ -24,10 +24,10 @@ func NewGame() *Game {
 
 	pl1 := newPortalLink()
 	pl2 := newPortalLink()
-	p1 := newPortal(pl1.ID, 350, 350)
-	p2 := newPortal(pl1.ID, FieldWidth-350, FieldHeight-350)
-	p3 := newPortal(pl2.ID, 350, FieldHeight-350)
-	p4 := newPortal(pl2.ID, FieldWidth-350, 350)
+	p1 := newPortal(pl1.ID, 500, 500)
+	p2 := newPortal(pl1.ID, FieldWidth-500, FieldHeight-500)
+	p3 := newPortal(pl2.ID, 500, FieldHeight-500)
+	p4 := newPortal(pl2.ID, FieldWidth-500, 500)
 	pl1.PortalIDs = []string{p1.ID, p2.ID}
 	pl2.PortalIDs = []string{p3.ID, p4.ID}
 	pn := newPortalNetwork(
@@ -139,6 +139,7 @@ func (g *Game) Tick() (map[string]bool, map[string]bool) {
 				g.RespawnPlayer(p1)
 			}
 		}
+		g.PortalNetwork.TeleportTick(p1)
 		p1.Tick(float64(dt)/1000, g.Players)
 		for _, brick := range g.Bricks {
 			if !p1.IsHooked && p1.Hook == nil {

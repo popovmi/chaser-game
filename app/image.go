@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	//go:embed assets/background.png
+	//go:embed assets/background2.png
 	bgBytes []byte
 
 	//go:embed assets/brick.png
@@ -73,10 +73,18 @@ func (c *gameClient) createDefaultImages() {
 	healthFillImg.Fill(color.RGBA{G: 255, A: 255})
 
 	worldImg := ebiten.NewImage(game.FieldWidth, game.FieldHeight)
-	op := &ebiten.DrawImageOptions{}
-	op.ColorScale.ScaleAlpha(0.35)
-	worldImg.DrawImage(background, op)
-
+	bgW, bgH := background.Bounds().Dx(), background.Bounds().Dy()
+	for i := range 2 {
+		for j := range 2 {
+			fi := float64(i)
+			fj := float64(j)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(float64(game.FieldWidth/2)/float64(bgW), float64(game.FieldHeight/2)/float64(bgH))
+			op.GeoM.Translate(fi*float64(game.FieldWidth)/2, fj*float64(game.FieldHeight)/2)
+			op.ColorScale.ScaleAlpha(0.35)
+			worldImg.DrawImage(background, op)
+		}
+	}
 	portalRealLength := float64(2 * game.PortalRadius)
 	portalImageLength := float64(portal.Bounds().Dx())
 	portalScale := portalRealLength / portalImageLength
