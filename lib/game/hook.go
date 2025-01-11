@@ -34,48 +34,38 @@ func (p *Player) HookTick(dt float64, players map[string]*Player) {
 		if p.IsHookDone() {
 			return
 		}
-	} else {
-		target, targetExists := players[p.Hook.CaughtPlayerID]
+		return
+	}
 
-		if p.Hook.IsReturning {
-			vel := vector.NewVector2D(p.Position.X, p.Position.Y)
-			vel.SubV(p.Hook.End)
-			vel.Normalize()
-			vel.Mul(hookBackwardVelocity * dt)
-			p.Hook.Vel = vel
-			p.Hook.End.AddV(p.Hook.Vel)
-		} else {
-			p.Hook.End.Add(p.Hook.Vel.X*dt, p.Hook.Vel.Y*dt)
-			v := vector.NewVector2D(p.Position.X, p.Position.Y)
-			v.SubV(p.Hook.End)
-			if v.Length() >= MaxHookLength {
-				p.Hook.IsReturning = true
-			}
-		}
+	p.RotateHook()
+	p.Hook.End.Add(p.Hook.Vel.X*dt, p.Hook.Vel.Y*dt)
+	if !p.Hook.IsReturning && p.Hook.End.Distance(p.Position) >= MaxHookLength {
+		p.Hook.IsReturning = true
+	}
 
-		if !targetExists {
-			p.HookPlayer(players)
-			target, targetExists = players[p.Hook.CaughtPlayerID]
-		}
+	target, targetExists := players[p.Hook.CaughtPlayerID]
+	if !targetExists {
+		p.HookPlayer(players)
+		target, targetExists = players[p.Hook.CaughtPlayerID]
+	}
+	if targetExists {
+		target.Position.X = p.Hook.End.X
+		target.Position.Y = p.Hook.End.Y
+	} else if !p.Hook.IsReturning {
+		p.Hook.Clamp()
+	}
 
+	if p.IsHookDone() {
 		if targetExists {
-			target.Position.X = p.Hook.End.X
-			target.Position.Y = p.Hook.End.Y
-		} else if !p.Hook.IsReturning {
-			p.Hook.Clamp()
-		}
-
-		if p.IsHookDone() {
-			if targetExists {
-				target.IsHooked = false
-				target.CaughtByID = ""
-			}
+			target.IsHooked = false
+			target.CaughtByID = ""
 		}
 	}
+
 }
 
 func (p *Player) UseHook() {
-	if p.Hook != nil && !p.Hook.IsReturning && p.Hook.CurrentDistance >= hookMinDistance {
+	if p.Hook != nil && !p.Hook.IsReturning {
 		p.Hook.IsReturning = true
 		return
 	}
@@ -173,7 +163,6 @@ func (p *Player) RotateHook() {
 		p.Hook.Vel.X = math.Cos(p.Angle) * hookVelocity
 		p.Hook.Vel.Y = math.Sin(p.Angle) * hookVelocity
 	}
-
 }
 
 func (p *Player) HookLength() float64 {

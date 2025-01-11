@@ -126,12 +126,12 @@ func (c *gameClient) сreatePlayerImages(p *game.Player) {
 
 	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
 
-	hookImg := ebiten.NewImage(game.MaxHookLength, 3)
+	hookImg := ebiten.NewImage(game.MaxHookLength, 5)
 	vector.StrokeLine(
 		hookImg,
-		0, 1.5,
-		game.MaxHookLength, 1.5,
-		3,
+		0, 0,
+		game.MaxHookLength, 5,
+		5,
 		p.Color.ToColorRGBA(),
 		true,
 	)
