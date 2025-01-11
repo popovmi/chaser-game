@@ -48,7 +48,6 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		if err != nil {
 			return err
 		}
-
 		for k, player := range c.game.Players {
 			if updatedPlayer, ok := state.Game.Players[k]; ok {
 				*player = *updatedPlayer
@@ -61,6 +60,9 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		for k, player := range state.Game.Players {
 			c.game.Players[k] = player
 			c.сreatePlayerImages(player)
+		}
+		for k, link := range state.Game.PortalNetwork.Links {
+			c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
 		}
 		c.game.PreviousTick = time.Now().UnixMilli()
 		c.moveCamera()
@@ -89,7 +91,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			return err
 		}
 		if portedMsg.ID != c.clientID {
-			if c.game.Teleport(portedMsg.ID) {
+			if c.game.PortalNetwork.Teleport(c.game.Players[portedMsg.ID]) {
 				c.audio.playPortal()
 			}
 		}

@@ -10,9 +10,9 @@ import (
 //go:generate msgp
 
 type Game struct {
-	Players     map[string]*Player `msg:"players"`
-	PortalLinks []*PortalLink      `msg:"portalLinks"`
-	Bricks      []*Brick           `msg:"bricks"`
+	Players       map[string]*Player `msg:"players"`
+	PortalNetwork *PortalNetwork     `msg:"portalNetwork"`
+	Bricks        []*Brick           `msg:"bricks"`
 
 	Counter      atomic.Uint64 `msg:"-"`
 	Mu           sync.Mutex    `msg:"-"`
@@ -22,12 +22,22 @@ type Game struct {
 func NewGame() *Game {
 	brickW, brickH := 200.0, 40.0
 
+	pl1 := newPortalLink()
+	pl2 := newPortalLink()
+	p1 := newPortal(pl1.ID, 350, 350)
+	p2 := newPortal(pl1.ID, FieldWidth-350, FieldHeight-350)
+	p3 := newPortal(pl2.ID, 350, FieldHeight-350)
+	p4 := newPortal(pl2.ID, FieldWidth-350, 350)
+	pl1.PortalIDs = []string{p1.ID, p2.ID}
+	pl2.PortalIDs = []string{p3.ID, p4.ID}
+	pn := newPortalNetwork(
+		map[string]*Portal{p1.ID: p1, p2.ID: p2, p3.ID: p3, p4.ID: p4},
+		map[string]*PortalLink{pl1.ID: pl1, pl2.ID: pl2},
+	)
+
 	g := &Game{
-		Players: make(map[string]*Player),
-		PortalLinks: []*PortalLink{
-			NewPortalLink(350, 350, FieldWidth-350, FieldHeight-350),
-			NewPortalLink(350, FieldHeight-350, FieldWidth-350, 350),
-		},
+		Players:       make(map[string]*Player),
+		PortalNetwork: pn,
 		Bricks: []*Brick{
 
 			// mid hor
@@ -150,33 +160,6 @@ func (g *Game) Tick() (map[string]bool, map[string]bool) {
 	}
 	g.PreviousTick += dt
 	return wallHits, touches
-}
-
-func (g *Game) Teleport(id string) bool {
-	if p, ok := g.Players[id]; ok {
-		if p.IsHooked {
-			return false
-		}
-
-		for _, link := range g.PortalLinks {
-			if link.CollideAndTeleport(p) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (g *Game) CanUsePortal(id string) (bool, time.Time) {
-	if p, ok := g.Players[id]; ok && !p.IsHooked {
-		for _, link := range g.PortalLinks {
-			touching, usedAt := link.GetPortalUsage(p)
-			if touching {
-				return touching, usedAt
-			}
-		}
-	}
-	return false, time.Time{}
 }
 
 func (g *Game) RespawnPlayer(p *Player) {
