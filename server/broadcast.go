@@ -12,10 +12,8 @@ func (srv *server) broadcastState() {
 		messages.SrvMsgGameState,
 		&messages.GameStateMsg{
 			Game: &game.Game{
-				Players: srv.game.Players,
-				PortalNetwork: &game.PortalNetwork{
-					Links: srv.game.PortalNetwork.Links,
-				},
+				Players:       srv.game.Players,
+				PortalNetwork: srv.game.PortalNetwork,
 			},
 		},
 	).MarshalMsg(nil)

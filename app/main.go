@@ -55,13 +55,15 @@ type gameClient struct {
 	fps float64
 	tps float64
 
-	worldImg          *ebiten.Image
-	portalImg         *ebiten.Image
-	brickImg          *ebiten.Image
-	healthImg         *ebiten.Image
-	healthFillImg     *ebiten.Image
-	playerImg         *ebiten.Image
-	playerImages      map[string]*playerImg
+	worldImg         *ebiten.Image
+	portalStaticImg  *ebiten.Image
+	portalAnimations map[string]*Animation
+	brickImg         *ebiten.Image
+	healthImg        *ebiten.Image
+	healthFillImg    *ebiten.Image
+	playerImg        *ebiten.Image
+	playerImages     map[string]*playerImg
+
 	untouchableTimers map[string]*untouchableTimer
 
 	tcpAddr string

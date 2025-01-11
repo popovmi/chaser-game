@@ -206,6 +206,12 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "Teleported")
 				return
 			}
+		case "teleported_at":
+			z.TeleportedAt, err = dc.ReadTime()
+			if err != nil {
+				err = msgp.WrapError(err, "TeleportedAt")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -219,9 +225,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 27
+	// map header, size 28
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x1b, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x1c, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -497,15 +503,25 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "Teleported")
 		return
 	}
+	// write "teleported_at"
+	err = en.Append(0xad, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	if err != nil {
+		return
+	}
+	err = en.WriteTime(z.TeleportedAt)
+	if err != nil {
+		err = msgp.WrapError(err, "TeleportedAt")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 27
+	// map header, size 28
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x1b, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x1c, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -609,6 +625,9 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "teleported"
 	o = append(o, 0xaa, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64)
 	o = msgp.AppendBool(o, z.Teleported)
+	// string "teleported_at"
+	o = append(o, 0xad, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	o = msgp.AppendTime(o, z.TeleportedAt)
 	return
 }
 
@@ -811,6 +830,12 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Teleported")
 				return
 			}
+		case "teleported_at":
+			z.TeleportedAt, bts, err = msgp.ReadTimeBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TeleportedAt")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -831,7 +856,7 @@ func (z *Player) Msgsize() (s int) {
 	} else {
 		s += z.Hook.Msgsize()
 	}
-	s += 10 + msgp.TimeSize + 10 + msgp.BoolSize + 13 + msgp.StringPrefixSize + len(z.CaughtByID) + 9 + msgp.BoolSize + 11 + msgp.TimeSize + 8 + msgp.BoolSize + 12 + msgp.BoolSize + 14 + msgp.StringPrefixSize + len(z.DepPortalID) + 14 + msgp.StringPrefixSize + len(z.ArrPortalID) + 11 + msgp.BoolSize
+	s += 10 + msgp.TimeSize + 10 + msgp.BoolSize + 13 + msgp.StringPrefixSize + len(z.CaughtByID) + 9 + msgp.BoolSize + 11 + msgp.TimeSize + 8 + msgp.BoolSize + 12 + msgp.BoolSize + 14 + msgp.StringPrefixSize + len(z.DepPortalID) + 14 + msgp.StringPrefixSize + len(z.ArrPortalID) + 11 + msgp.BoolSize + 14 + msgp.TimeSize
 	return
 }
 

@@ -77,7 +77,7 @@ func newGameMusic() *music {
 	return &music{
 		audioContext: audioContext,
 		wallHit:      newGameSound(audioContext, 0.2, SoundWallOGG),
-		portal:       newGameSound(audioContext, 0.2, SoundPortalOGG),
+		portal:       newGameSound(audioContext, 1, SoundPortalOGG),
 		touch:        newGameSound(audioContext, 0.1, SoundTouchOGG),
 	}
 }

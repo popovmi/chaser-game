@@ -30,3 +30,9 @@ func (a *Animation) Update() {
 func (a *Animation) Image() *ebiten.Image {
 	return a.img
 }
+
+func (a *Animation) Reset() {
+	a.Count = 0
+	a.CurrentFrameIndex = 0
+	a.img = a.Frames[0]
+}

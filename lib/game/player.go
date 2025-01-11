@@ -60,10 +60,11 @@ type Player struct {
 	BlinkedAt time.Time `msg:"blinked_at"`
 	Blinked   bool      `msg:"blinked"`
 
-	Teleporting bool   `msg:"teleporting"`
-	DepPortalID string `msg:"dep_portal_id"`
-	ArrPortalID string `msg:"arr_portal_id"`
-	Teleported  bool   `msg:"teleported"`
+	Teleporting  bool      `msg:"teleporting"`
+	DepPortalID  string    `msg:"dep_portal_id"`
+	ArrPortalID  string    `msg:"arr_portal_id"`
+	Teleported   bool      `msg:"teleported"`
+	TeleportedAt time.Time `msg:"teleported_at"`
 
 	mu sync.Mutex
 }

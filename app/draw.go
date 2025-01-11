@@ -75,6 +75,7 @@ func (c *gameClient) drawGame(screen *ebiten.Image) {
 	c.drawWorld(screen)
 	c.drawSpells(screen)
 	c.drawPlayerList(screen)
+	c.drawPortals(screen)
 	c.drawPlayers(screen)
 }
 
@@ -136,6 +137,16 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 				}
 				imageDrawOptions.ColorScale.ScaleAlpha(alpha)
 			}
+			if p.Teleporting {
+				var alpha float32
+				progress := time.Since(p.TeleportedAt).Seconds() / game.TeleportDuration
+				if progress < 0.5 {
+					alpha = float32(1 - 2*progress)
+				} else {
+					alpha = float32(2*progress - 1)
+				}
+				imageDrawOptions.ColorScale.ScaleAlpha(alpha)
+			}
 
 			nameTextOptions.ColorScale.ScaleWithColor(p.Color.ToColorRGBA())
 
@@ -186,11 +197,17 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	}
 }
 
-func (c *gameClient) drawPortals() {
+func (c *gameClient) drawPortals(screen *ebiten.Image) {
 	for _, p := range c.game.PortalNetwork.Portals {
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(p.Pos.X-game.PortalRadius, p.Pos.Y-game.PortalRadius)
-		c.worldImg.DrawImage(c.portalImg, op)
+		op.GeoM.Translate(p.Pos.X-game.PortalRadius-c.cameraX, p.Pos.Y-game.PortalRadius-c.cameraY)
+
+		img := c.portalStaticImg
+		t := time.Since(p.LastUsedAt).Seconds()
+		if t <= 1.0 {
+			img = c.portalAnimations[p.ID].Image()
+		}
+		screen.DrawImage(img, op)
 	}
 }
 

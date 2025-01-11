@@ -29,3 +29,8 @@ build_server:
 build_app:
 	go build -ldflags="-X 'main.tcpAddr=$(PUBLIC_TCP_ADDRESS)' -X 'main.udpAddr=$(PUBLIC_UDP_ADDRESS)'" -o build/dev_app_$(VERSION) ./app
 	GOOS=windows GOARCH=amd64 go build -ldflags="-X 'main.tcpAddr=$(PUBLIC_TCP_ADDRESS)' -X 'main.udpAddr=$(PUBLIC_UDP_ADDRESS)'" -o build/dev_app_$(VERSION).exe ./app
+
+
+.PHONY: msgp_gen
+msgp_gen:
+	go generate ./lib/*

@@ -81,6 +81,7 @@ func (c *gameClient) updateGameScreen() error {
 		c.audio.touch.play(id)
 	}
 	c.moveCamera()
+	animatePortalIds := make([]string, 0)
 	for _, p := range c.game.Players {
 		if !p.Touchable() {
 			ut, ok := c.untouchableTimers[p.ID]
@@ -97,7 +98,14 @@ func (c *gameClient) updateGameScreen() error {
 			delete(c.untouchableTimers, p.ID)
 		}
 		c.playerImages[p.ID].animation.Update()
+		if p.Teleporting {
+			animatePortalIds = append(animatePortalIds, p.DepPortalID, p.ArrPortalID)
+		}
+		for _, id := range animatePortalIds {
+			c.portalAnimations[id].Update()
+		}
 	}
+
 	return nil
 }
 
