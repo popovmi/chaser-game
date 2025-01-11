@@ -30,6 +30,7 @@ const (
 type playerImg struct {
 	animation *Animation
 	baseImg   *ebiten.Image
+	hookImg   *ebiten.Image
 }
 
 type untouchableTimer struct {
