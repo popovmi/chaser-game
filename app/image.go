@@ -59,6 +59,12 @@ func (c *gameClient) createDefaultImages() {
 		panic(err)
 	}
 
+	healthImage := ebiten.NewImage(2*game.Radius, 6)
+	healthImage.Fill(color.RGBA{R: 128, A: 255})
+
+	healthFillImg := ebiten.NewImage(2*game.Radius, 6)
+	healthFillImg.Fill(color.RGBA{G: 255, A: 255})
+
 	worldImg := ebiten.NewImage(game.FieldWidth, game.FieldHeight)
 	op := &ebiten.DrawImageOptions{}
 	op.ColorScale.ScaleAlpha(0.35)
@@ -80,6 +86,8 @@ func (c *gameClient) createDefaultImages() {
 	c.worldImg = worldImg
 	c.portalImg = portalImg
 	c.brickImg = brickImg
+	c.healthImg = healthImage
+	c.healthFillImg = healthFillImg
 
 	for _, spriteBytes := range [][]byte{
 		ship1Bytes, ship2Bytes,
@@ -103,7 +111,7 @@ func (c *gameClient) createDefaultImages() {
 	}
 }
 
-func (c *gameClient) CreatePlayerImages(p *game.Player) {
+func (c *gameClient) сreatePlayerImages(p *game.Player) {
 	w, h := 2*game.Radius, 2*game.Radius
 
 	baseImg := ebiten.NewImage(w, h)
@@ -117,6 +125,7 @@ func (c *gameClient) CreatePlayerImages(p *game.Player) {
 	drawEyes(baseImg, float32(game.Radius), float32(game.Radius))
 
 	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
+
 	c.playerImages[p.ID] = &playerImg{animation, baseImg}
 }
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/tinylib/msgp/msgp"
-	
+
 	"wars/lib/game"
 	"wars/lib/messages"
 )
@@ -122,7 +122,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		movedMsg := &messages.PlayerMovedMsg{ID: c.ID, Dir: moveReq.Dir}
 		b, err := messages.New(messages.SrvMsgPlayerMoved, movedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", movedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)
@@ -132,11 +132,11 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		if err != nil {
 			return err
 		}
-		c.HandleTurn(rotateReq.Dir)
-		turnedMsg := &messages.PlayerTurnedMsg{ID: c.ID, Dir: rotateReq.Dir}
-		b, err := messages.New(messages.SrvMsgPlayerMoved, turnedMsg).MarshalMsg(nil)
+		c.HandleRotate(rotateReq.Dir)
+		rotatedMsg := &messages.PlayerRotatedMsg{ID: c.ID, Dir: rotateReq.Dir}
+		b, err := messages.New(messages.SrvMsgPlayerRotated, rotatedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", rotatedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)
@@ -146,7 +146,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
 		b, err := messages.New(messages.SrvMsgPlayerTeleported, portedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", portedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)
@@ -156,7 +156,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		blinkedMsg := &messages.PlayerBlinkedMsg{ID: c.ID}
 		b, err := messages.New(messages.SrvMsgPlayerBlinked, blinkedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", blinkedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)
@@ -166,7 +166,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		hookedMsg := &messages.PlayerHookedMsg{ID: c.ID}
 		b, err := messages.New(messages.SrvMsgPlayerHooked, hookedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", hookedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)
@@ -174,9 +174,9 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 	case messages.ClMsgBrake:
 		c.Brake()
 		brakedMsg := &messages.PlayerBrakedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerHooked, brakedMsg).MarshalMsg(nil)
+		b, err := messages.New(messages.SrvMsgPlayerBraked, brakedMsg).MarshalMsg(nil)
 		if err != nil {
-			slog.Error("could not marshal updates", err)
+			slog.Error("could not encode message", "error", err.Error(), "msg", brakedMsg)
 			return err
 		}
 		srv.broadcastUDP(b)

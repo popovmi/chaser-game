@@ -28,7 +28,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		c.game = state
 		for _, player := range c.game.Players {
-			c.CreatePlayerImages(player)
+			c.сreatePlayerImages(player)
 		}
 		c.drawPortals()
 		c.drawBricks()
@@ -41,7 +41,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			return err
 		}
 		c.game.Players[player.ID] = player
-		c.CreatePlayerImages(player)
+		c.сreatePlayerImages(player)
 
 	case messages.SrvMsgGameState:
 		state, err := messages.Unmarshal(&messages.GameStateMsg{}, msg.B)
@@ -51,19 +51,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 
 		for k, player := range c.game.Players {
 			if updatedPlayer, ok := state.Game.Players[k]; ok {
-				player.JoinedAt = updatedPlayer.JoinedAt
-				player.Position = updatedPlayer.Position
-				player.Velocity = updatedPlayer.Velocity
-				player.Angle = updatedPlayer.Angle
-				player.MoveDir = updatedPlayer.MoveDir
-				player.RotationDir = updatedPlayer.RotationDir
-				player.Hook = updatedPlayer.Hook
-				player.HookedAt = updatedPlayer.HookedAt
-				player.IsHooked = updatedPlayer.IsHooked
-				player.CaughtByID = updatedPlayer.CaughtByID
-				player.Blinking = updatedPlayer.Blinking
-				player.BlinkedAt = updatedPlayer.BlinkedAt
-				player.Blinked = updatedPlayer.Blinked
+				*player = *updatedPlayer
 				delete(state.Game.Players, k)
 			} else {
 				delete(c.game.Players, k)
@@ -72,7 +60,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		for k, player := range state.Game.Players {
 			c.game.Players[k] = player
-			c.CreatePlayerImages(player)
+			c.сreatePlayerImages(player)
 		}
 		c.game.PreviousTick = time.Now().UnixMilli()
 		c.moveCamera()
@@ -86,13 +74,13 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			c.game.Players[movedMsg.ID].HandleMove(movedMsg.Dir)
 		}
 
-	case messages.SrvMsgPlayerTurned:
-		turnedMsg, err := messages.Unmarshal(&messages.PlayerTurnedMsg{}, msg.B)
+	case messages.SrvMsgPlayerRotated:
+		rotatedMsg, err := messages.Unmarshal(&messages.PlayerRotatedMsg{}, msg.B)
 		if err != nil {
 			return err
 		}
-		if turnedMsg.ID != c.clientID {
-			c.game.Players[turnedMsg.ID].HandleTurn(turnedMsg.Dir)
+		if rotatedMsg.ID != c.clientID {
+			c.game.Players[rotatedMsg.ID].HandleRotate(rotatedMsg.Dir)
 		}
 
 	case messages.SrvMsgPlayerTeleported:
@@ -122,6 +110,15 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		if hookedMsg.ID != c.clientID {
 			c.game.Players[hookedMsg.ID].UseHook()
+		}
+
+	case messages.SrvMsgPlayerBraked:
+		brakedMsg, err := messages.Unmarshal(&messages.PlayerBrakedMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+		if brakedMsg.ID != c.clientID {
+			c.game.Players[brakedMsg.ID].Brake()
 		}
 
 	default:

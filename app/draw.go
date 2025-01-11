@@ -126,6 +126,17 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		}
 		screen.DrawImage(img, options)
 
+		hpOp := &ebiten.DrawImageOptions{}
+		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+		screen.DrawImage(c.healthImg, hpOp)
+		hpWidth := (p.HP / game.MaxHP) * 50
+		hpOp.GeoM.Reset()
+		hpOp.GeoM.Scale(hpWidth/50, 1)
+		hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
+		hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
+		screen.DrawImage(c.healthFillImg, hpOp)
+
 		if p.Hook != nil {
 			shiftedStartX := float32(p.Position.X) - float32(c.cameraX)
 			shiftedStartY := float32(p.Position.Y) - float32(c.cameraY)
@@ -195,7 +206,8 @@ func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 
 	i := 1
 	for _, player := range sorted {
-		playerStr := fmt.Sprintf("%s | %dm", player.Name, int(time.Since(player.JoinedAt).Minutes()))
+		playerStr := fmt.Sprintf("%s | %d | %d | %dm", player.Name, player.Kills, player.Deaths,
+			int(time.Since(player.JoinedAt).Minutes()))
 		textW, textH := text.Measure(playerStr, FontFace18, lineSpacing)
 		op := &text.DrawOptions{}
 		op.LineSpacing = lineSpacing

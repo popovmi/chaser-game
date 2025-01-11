@@ -56,6 +56,8 @@ type gameClient struct {
 	worldImg          *ebiten.Image
 	portalImg         *ebiten.Image
 	brickImg          *ebiten.Image
+	healthImg         *ebiten.Image
+	healthFillImg     *ebiten.Image
 	playerImages      map[string]*playerImg
 	untouchableTimers map[string]*untouchableTimer
 

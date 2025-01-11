@@ -6,7 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	
+
 	"wars/app/components"
 	"wars/lib/game"
 	"wars/lib/messages"
@@ -119,7 +119,7 @@ func (c *gameClient) rotate(dir game.RotationDirection) {
 				slog.Error("could not send move", "error", err.Error())
 			}
 		}()
-		p.HandleTurn(dir)
+		p.HandleRotate(dir)
 	}
 }
 
@@ -212,10 +212,10 @@ func (c *gameClient) HandleInput() {
 func getRotateDirection() game.RotationDirection {
 	var rotateDir game.RotationDirection
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		rotateDir = game.RotationPositive
+		rotateDir = game.RotationNegative
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		rotateDir = game.RotationNegative
+		rotateDir = game.RotationPositive
 	}
 	return rotateDir
 }

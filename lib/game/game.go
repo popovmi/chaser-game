@@ -97,7 +97,7 @@ func (g *Game) findFreeSpot(np *Player) {
 			np.Position.Y = y
 			intersects := false
 			for _, p := range g.Players {
-				if np.Touching(p) {
+				if p.ID != np.ID && np.Touching(p) {
 					intersects = true
 					break
 				}
@@ -118,6 +118,9 @@ func (g *Game) Tick() (map[string]bool, map[string]bool) {
 	dt := now - g.PreviousTick
 
 	for _, p := range g.Players {
+		if p.Status == PlayerStatusDead {
+			g.RespawnPlayer(p)
+		}
 		p.Tick(float64(dt)/1000, g.Players)
 	}
 
@@ -181,4 +184,11 @@ func (g *Game) CanUsePortal(id string) (bool, time.Time) {
 		}
 	}
 	return false, time.Time{}
+}
+
+func (g *Game) RespawnPlayer(p *Player) {
+	g.findFreeSpot(p)
+	p.RespawnedAt = time.Now()
+	p.HP = MaxHP
+	p.Status = PlayerStatusAlive
 }
