@@ -37,5 +37,6 @@ const (
 
 	untouchableTime = 2.0
 
-	MaxHP = 100.0
+	MaxHP       = 100.0
+	RespawnTime = 2.5
 )

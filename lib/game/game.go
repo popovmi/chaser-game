@@ -114,45 +114,41 @@ func (g *Game) RemovePlayer(id string) {
 }
 
 func (g *Game) Tick() (map[string]bool, map[string]bool) {
-	now := time.Now().UnixMilli()
-	dt := now - g.PreviousTick
+	now := time.Now()
+	dt := now.UnixMilli() - g.PreviousTick
 
-	for _, p := range g.Players {
-		if p.Status == PlayerStatusDead {
-			g.RespawnPlayer(p)
-		}
-		p.Tick(float64(dt)/1000, g.Players)
-	}
-
-	wallHits, touches := g.detectCollisions()
-	g.PreviousTick += dt
-	return wallHits, touches
-}
-
-func (g *Game) detectCollisions() (map[string]bool, map[string]bool) {
 	wallHits := make(map[string]bool)
 	touches := make(map[string]bool)
 
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
+
 	for k1, p1 := range g.Players {
+		if p1.Status == PlayerStatusDead {
+			if time.Since(p1.DeadAt).Seconds() >= RespawnTime {
+				g.RespawnPlayer(p1)
+			}
+		}
+		p1.Tick(float64(dt)/1000, g.Players)
 		for _, brick := range g.Bricks {
 			if !p1.IsHooked && p1.Hook == nil {
 				brick.CollideAndBounce(p1)
 			}
-		}
-		if p1.Clamp() {
-			wallHits[p1.ID] = true
-		}
-		for k2, p2 := range g.Players {
-			if k1 < k2 && p1.Touchable() && p2.Touchable() {
-				if p1.Touching(p2) {
-					touches[p1.ID] = true
-					touches[p2.ID] = true
-
-					p1.CollidePlayer(p2)
+			if p1.Clamp() {
+				wallHits[p1.ID] = true
+			}
+			for k2, p2 := range g.Players {
+				if k1 < k2 && p1.Touchable() && p2.Touchable() {
+					if p1.Touching(p2) {
+						touches[p1.ID] = true
+						touches[p2.ID] = true
+						p1.CollidePlayer(p2)
+					}
 				}
 			}
 		}
 	}
+	g.PreviousTick += dt
 	return wallHits, touches
 }
 
@@ -172,10 +168,7 @@ func (g *Game) Teleport(id string) bool {
 }
 
 func (g *Game) CanUsePortal(id string) (bool, time.Time) {
-	if p, ok := g.Players[id]; ok {
-		if p.IsHooked {
-			return false, time.Time{}
-		}
+	if p, ok := g.Players[id]; ok && !p.IsHooked {
 		for _, link := range g.PortalLinks {
 			touching, usedAt := link.GetPortalUsage(p)
 			if touching {

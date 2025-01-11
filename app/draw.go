@@ -85,6 +85,9 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
+		if p.Status == game.PlayerStatusDead {
+			continue
+		}
 		img := c.playerImages[p.ID].animation.Image()
 		//img := c.playerImages[p.ID].baseImg
 		w, h := float64(img.Bounds().Dx()), float64(img.Bounds().Dy())
