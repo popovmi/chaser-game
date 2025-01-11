@@ -86,7 +86,6 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
 		image := c.playerImages[p.ID].animation.Image()
-		//image := c.playerImages[p.ID].baseImg
 		imageW, imageH := float64(image.Bounds().Dx()), float64(image.Bounds().Dy())
 
 		lineSpacing := 1.1
@@ -142,9 +141,9 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
 			hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
 			screen.DrawImage(c.healthImg, hpOp)
-			hpWidth := (p.HP / game.MaxHP) * 50
+			hpWidth := p.HP / game.MaxHP
 			hpOp.GeoM.Reset()
-			hpOp.GeoM.Scale(hpWidth/50, 1)
+			hpOp.GeoM.Scale(hpWidth, 1)
 			hpOp.GeoM.Translate(-c.cameraX, -c.cameraY)
 			hpOp.GeoM.Translate(p.Position.X-game.Radius, p.Position.Y-game.Radius-textH/2)
 			screen.DrawImage(c.healthFillImg, hpOp)
@@ -153,19 +152,13 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		screen.DrawImage(image, imageDrawOptions)
 
 		if p.Hook != nil {
-			shiftedStartX := float32(p.Position.X) - float32(c.cameraX)
-			shiftedStartY := float32(p.Position.Y) - float32(c.cameraY)
-			shiftedEndX := float32(p.Hook.End.X) - float32(c.cameraX)
-			shiftedEndY := float32(p.Hook.End.Y) - float32(c.cameraY)
-
-			vector.StrokeLine(
-				screen,
-				shiftedStartX, shiftedStartY,
-				shiftedEndX, shiftedEndY,
-				3,
-				p.Color.ToColorRGBA(),
-				true,
-			)
+			hookImg := c.playerImages[p.ID].hookImg
+			hookOp := &ebiten.DrawImageOptions{}
+			hookLength := p.HookLength() / game.MaxHookLength
+			hookOp.GeoM.Scale(hookLength, 1)
+			hookOp.GeoM.Rotate(p.Angle)
+			hookOp.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
+			screen.DrawImage(hookImg, hookOp)
 		}
 		if p.ID == c.clientID {
 			canUse, portal, _ := c.game.PortalNetwork.CanUsePortal(p)

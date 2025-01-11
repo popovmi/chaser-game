@@ -81,13 +81,13 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 	p.BlinkTick()
 	if !p.IsHooked {
 		p.Friction(dt)
+		p.HookTick(dt, players)
 		p.Rotate(dt)
 
 		if p.Hook == nil || !p.Hook.Stuck {
 			p.Accelerate()
 			p.Step(dt)
 		}
-		p.HookTick(dt, players)
 	}
 }
 
@@ -95,7 +95,11 @@ func (p *Player) BlinkTick() {
 	if p.Blinking {
 		progress := time.Since(p.BlinkedAt).Seconds() / BlinkDuration
 		if progress >= 0.5 && !p.Blinked {
-			p.Position.Add(blinkDistance*math.Cos(p.Angle), blinkDistance*math.Sin(p.Angle))
+			dx, dy := blinkDistance*math.Cos(p.Angle), blinkDistance*math.Sin(p.Angle)
+			p.Position.Add(dx, dy)
+			if p.Hook != nil {
+				p.Hook.End.Add(dx, dy)
+			}
 			p.Blinked = true
 		}
 		if progress >= 1 {

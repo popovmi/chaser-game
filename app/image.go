@@ -126,7 +126,17 @@ func (c *gameClient) сreatePlayerImages(p *game.Player) {
 
 	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
 
-	c.playerImages[p.ID] = &playerImg{animation, baseImg}
+	hookImg := ebiten.NewImage(game.MaxHookLength, 5)
+	vector.StrokeLine(
+		hookImg,
+		0, 0,
+		game.MaxHookLength, 5,
+		5,
+		p.Color.ToColorRGBA(),
+		true,
+	)
+
+	c.playerImages[p.ID] = &playerImg{animation, baseImg, hookImg}
 }
 
 func drawEyes(img *ebiten.Image, cx, cy float32) {

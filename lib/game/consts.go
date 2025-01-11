@@ -11,7 +11,7 @@ const (
 	PortalRadius   = 75
 	PortalCooldown = 5.0
 
-	turnAngle     = math.Pi * 1
+	turnAngle     = math.Pi * 1.5
 	moveTurnAngle = math.Pi * 1
 
 	acceleration       = 10.0
@@ -29,8 +29,7 @@ const (
 	BlinkCooldown = 2.0 + BlinkDuration
 
 	HookCooldown         = 3.0
-	hookDistance         = 500
-	hookMinDistance      = 150
+	MaxHookLength        = 500
 	hookVelocity         = 750
 	hookBackwardVelocity = 750
 	hookDamage           = 50

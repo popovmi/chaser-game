@@ -86,8 +86,13 @@ func (pn *PortalNetwork) Teleport(player *Player) bool {
 	for _, arrivalID := range link.PortalIDs {
 		if arrivalID != departure.ID {
 			link.LastUsed[player.ID] = time.Now()
+			dx := pn.Portals[arrivalID].Pos.X - player.Position.X
+			dy := pn.Portals[arrivalID].Pos.Y - player.Position.Y
 			player.Position.X = pn.Portals[arrivalID].Pos.X
 			player.Position.Y = pn.Portals[arrivalID].Pos.Y
+			if player.Hook != nil {
+				player.Hook.End.Add(dx, dy)
+			}
 			return true
 		}
 	}
