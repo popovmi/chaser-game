@@ -13,7 +13,6 @@ import (
 )
 
 func (c *gameClient) Update() error {
-	c.tps = ebiten.ActualTPS()
 	switch c.screen {
 	case screenMain:
 		return c.updateMainScreen()

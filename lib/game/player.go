@@ -90,7 +90,7 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 		p.Rotate(dt)
 
 		if p.Hook == nil || !p.Hook.Stuck {
-			p.Accelerate()
+			p.Accelerate(dt)
 			p.Step(dt)
 		}
 	}
@@ -131,40 +131,35 @@ func (p *Player) Rotate(dt float64) {
 	}
 }
 
-func (p *Player) Accelerate() {
-	var dvx, dvy float64
+func (p *Player) Accelerate(dt float64) {
+	var angle float64
 	switch p.MoveDir {
-	case "":
 	case "u":
-		dvy -= acceleration
+		angle = -math.Pi / 2
 	case "d":
-		dvy += acceleration
+		angle = math.Pi / 2
 	case "l":
-		dvx -= acceleration
+		angle = math.Pi
 	case "r":
-		dvx += acceleration
+		angle = 0
 	case "ul":
-		dvy -= acceleration
-		dvx -= acceleration
+		angle = -3 * math.Pi / 4
 	case "ur":
-		dvy -= acceleration
-		dvx += acceleration
+		angle = -math.Pi / 4
 	case "dl":
-		dvy += acceleration
-		dvx -= acceleration
+		angle = 3 * math.Pi / 4
 	case "dr":
-		dvy += acceleration
-		dvx += acceleration
+		angle = math.Pi / 4
+	default:
+		return
 	}
-
-	maxV := maxVelocity
-	if p.Velocity.Length() > maxVelocity {
-		maxV = maxCollideVelocity
+	p.Velocity.Add(acceleration*math.Cos(angle)*dt, acceleration*math.Sin(angle)*dt)
+	newSpeed := p.Velocity.Length()
+	if newSpeed > maxCollideVelocity {
+		p.Velocity.LimitLength(maxCollideVelocity)
+	} else if newSpeed > maxVelocity {
+		p.Velocity.LimitLength(maxVelocity)
 	}
-
-	p.Velocity.Add(dvx, dvy)
-	p.Velocity.LimitLength(maxV)
-
 }
 
 func (p *Player) Clamp() bool {
@@ -188,9 +183,6 @@ func (p *Player) Clamp() bool {
 		p.Position.Y = FieldHeight - Radius
 		p.Velocity.Y *= -wallElasticity
 		hit = true
-	}
-	if hit {
-		p.Velocity.LimitLength(maxCollideVelocity)
 	}
 	return hit
 }

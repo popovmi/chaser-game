@@ -100,20 +100,20 @@ func (c *gameClient) createDefaultImages() {
 		}
 		c.worldImg = worldImg
 	}
-	//{
-	//	portal, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(portalBytes))
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	portalRealLength := float64(2 * game.PortalRadius)
-	//	portalImageLength := float64(portal.Bounds().Dx())
-	//	portalScale := portalRealLength / portalImageLength
-	//	portalOp := &ebiten.DrawImageOptions{}
-	//	portalOp.GeoM.Scale(portalScale, portalScale)
-	//	portalImg := ebiten.NewImage(int(portalRealLength), int(portalRealLength))
-	//	portalImg.DrawImage(portal, portalOp)
-	//	c.portalStaticImg = portalImg
-	//}
+	{
+		portal, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(portalBytes))
+		if err != nil {
+			panic(err)
+		}
+		portalRealLength := float64(2 * game.PortalRadius)
+		portalImageLength := float64(portal.Bounds().Dx())
+		portalScale := portalRealLength / portalImageLength
+		portalOp := &ebiten.DrawImageOptions{}
+		portalOp.GeoM.Scale(portalScale, portalScale)
+		portalImg := ebiten.NewImage(int(portalRealLength), int(portalRealLength))
+		portalImg.DrawImage(portal, portalOp)
+		c.portalStaticImg = portalImg
+	}
 	{
 		brick, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(brickBytes))
 		if err != nil {
@@ -223,6 +223,6 @@ func (c *gameClient) createPortalsAnimations() {
 	c.portalAnimations = map[string]*Animation{}
 	for _, portal := range c.game.PortalNetwork.Portals {
 		c.portalAnimations[portal.ID] =
-			&Animation{Frames: portalSprites, AnimationSpeed: 0.125, img: portalSprites[0]}
+			&Animation{Frames: portalSprites, AnimationSpeed: 0.6, img: portalSprites[0], Reversed: true}
 	}
 }

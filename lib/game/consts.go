@@ -15,12 +15,12 @@ const (
 	turnAngle     = math.Pi * 1.5
 	moveTurnAngle = math.Pi * 1
 
-	acceleration       = 10.0
-	maxVelocity        = 300.0
-	maxCollideVelocity = 500
+	acceleration       = 400.0
+	maxVelocity        = 200.0
+	maxCollideVelocity = 400.0
 	Braking            = 0.75
 
-	wallElasticity  = 1.1
+	wallElasticity  = 1.2
 	BrickElasticity = 0.6
 
 	blinkDistance = 500

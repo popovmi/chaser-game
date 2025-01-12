@@ -52,9 +52,6 @@ type gameClient struct {
 	windowH          int
 	cameraX, cameraY float64
 
-	fps float64
-	tps float64
-
 	worldImg         *ebiten.Image
 	portalStaticImg  *ebiten.Image
 	portalAnimations map[string]*Animation
