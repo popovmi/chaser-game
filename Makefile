@@ -5,7 +5,7 @@ SERVER_UDP_ADDRESS ?= localhost:4201
 PUBLIC_TCP_ADDRESS ?= localhost:4200
 PUBLIC_UDP_ADDRESS ?= localhost:4201
 
-VERSION := $(shell git describe --tags --always)
+VERSION := $(shell git describe --tags --always | tr '.' '_')
 
 .PHONY: dev_server
 dev_server:
