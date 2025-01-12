@@ -12,8 +12,8 @@ const (
 	TeleportDuration = 0.8
 	PortalCooldown   = 3.0 + TeleportDuration
 
-	turnAngle     = math.Pi * 1.5
-	moveTurnAngle = math.Pi * 1
+	turnAngle     = math.Pi * 1
+	moveTurnAngle = math.Pi * 0.85
 
 	acceleration       = 300.0
 	maxVelocity        = 300.0
