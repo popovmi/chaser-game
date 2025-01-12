@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"maps"
 	"math"
 	"sort"
 	"time"
@@ -211,21 +212,28 @@ func (c *gameClient) drawBricks() {
 
 func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 	sorted := make([]*game.Player, 0)
-	for _, v := range c.game.Players {
+	for v := range maps.Values(c.game.Players) {
 		sorted = append(sorted, v)
 	}
-	sort.Slice(sorted, func(i, j int) bool {
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if sorted[i].Kills != sorted[j].Kills {
+			return sorted[i].Kills > sorted[j].Kills
+		}
+		if sorted[i].Deaths != sorted[j].Deaths {
+			return sorted[i].Deaths < sorted[j].Deaths
+		}
 		return sorted[i].JoinedAt.Before(sorted[j].JoinedAt)
+
 	})
 
-	i := 1
+	i := 0
 	for _, player := range sorted {
 		playerStr := fmt.Sprintf("%s | %d | %d | %dm", player.Name, player.Kills, player.Deaths,
 			int(time.Since(player.JoinedAt).Minutes()))
 		textW, textH := text.Measure(playerStr, FontFace18, lineSpacing)
 		op := &text.DrawOptions{}
 		op.LineSpacing = lineSpacing
-		op.GeoM.Translate(float64(c.windowW)-textW, float64(c.windowH)-textH*float64(i))
+		op.GeoM.Translate(float64(c.windowW)-textW, textH*float64(i))
 		op.ColorScale.ScaleWithColor(player.Color.ToColorRGBA())
 		text.Draw(screen, playerStr, FontFace18, op)
 		i++
