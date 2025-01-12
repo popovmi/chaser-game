@@ -133,6 +133,10 @@ func (p *Player) Rotate(dt float64) {
 }
 
 func (p *Player) Accelerate(dt float64) {
+	if p.MoveDir == "" && !p.Boosting {
+		p.Velocity.LimitLength(maxCollideVelocity)
+		return
+	}
 	var angle float64
 	switch p.MoveDir {
 	case "u":
@@ -153,15 +157,15 @@ func (p *Player) Accelerate(dt float64) {
 		angle = math.Pi / 4
 	}
 	if p.MoveDir != "" {
-		p.Velocity.Add(acceleration*math.Cos(angle), acceleration*math.Sin(angle))
+		p.Velocity.Add(acceleration*math.Cos(angle)*dt, acceleration*math.Sin(angle)*dt)
 	}
 	if p.Boosting {
-		p.Velocity.Add(boostAcceleration*math.Cos(p.Angle), boostAcceleration*math.Sin(p.Angle))
+		p.Velocity.Add(boostAcceleration*math.Cos(p.Angle)*dt, boostAcceleration*math.Sin(p.Angle)*dt)
 	}
 	newSpeed := p.Velocity.Length()
 	if newSpeed > maxCollideVelocity {
 		p.Velocity.LimitLength(maxCollideVelocity)
-	} else if newSpeed > maxBoostVelocity {
+	} else if newSpeed > maxBoostVelocity || p.Boosting {
 		p.Velocity.LimitLength(maxBoostVelocity)
 	} else if newSpeed > maxVelocity {
 		p.Velocity.LimitLength(maxVelocity)
