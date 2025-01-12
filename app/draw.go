@@ -40,11 +40,16 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 		c.drawMain(screen)
 	case screenGame:
 		c.drawGame(screen)
+		if p, ok := c.game.Players[c.clientID]; ok {
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0, 40)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Length()), 0, 60)
+		}
 	default:
 	}
 
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()), 0, 0)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()), 0, 20)
+
 }
 
 func (c *gameClient) drawMain(screen *ebiten.Image) {
