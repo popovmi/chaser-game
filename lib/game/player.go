@@ -11,7 +11,6 @@ import (
 
 //go:generate msgp
 
-//msgp:replace Direction with:int
 type Direction int
 
 const (
@@ -20,7 +19,6 @@ const (
 	DirectionNegative
 )
 
-//msgp:replace Direction with:int
 type PlayerStatus int
 
 const (
