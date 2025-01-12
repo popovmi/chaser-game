@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/tinylib/msgp/msgp"
-	
+
 	"wars/lib/colors"
 	"wars/lib/game"
 	"wars/lib/messages"
@@ -20,16 +20,26 @@ import (
 
 func getColors() map[colors.RGBA]bool {
 	return map[colors.RGBA]bool{
-		colors.Green:      false,
-		colors.Blue:       false,
-		colors.Yellow:     false,
-		colors.Purple:     false,
-		colors.LightBlue:  false,
-		colors.Sky:        false,
-		colors.Lime:       false,
-		colors.Orange:     false,
-		colors.LightGreen: false,
-		colors.Brown:      false,
+		colors.Gray:         false,
+		colors.BrightRed:    false,
+		colors.BrightGreen:  false,
+		colors.BrightBlue:   false,
+		colors.BrightYellow: false,
+		colors.Aqua:         false,
+		colors.Fuchsia:      false,
+		colors.Maroon:       false,
+		colors.Green:        false,
+		colors.Navy:         false,
+		colors.Olive:        false,
+		colors.Teal:         false,
+		colors.Purple:       false,
+		colors.Silver:       false,
+		colors.Orange:       false,
+		colors.Indigo:       false,
+		colors.Pink:         false,
+		colors.Brown:        false,
+		colors.Gold:         false,
+		colors.YellowGreen:  false,
 	}
 }
 

@@ -12,14 +12,14 @@ const (
 	TeleportDuration = 0.8
 	PortalCooldown   = 3.0 + TeleportDuration
 
-	turnAngle     = math.Pi * 1.5
-	moveTurnAngle = math.Pi * 1
+	turnAngle     = math.Pi * 1
+	moveTurnAngle = math.Pi * 0.85
 
-	acceleration       = 300.0
+	acceleration       = 600.0
 	maxVelocity        = 300.0
-	boostAcceleration  = 350
-	maxBoostVelocity   = 450.0
-	maxCollideVelocity = 550.0
+	boostAcceleration  = 600
+	maxBoostVelocity   = 600.0
+	maxCollideVelocity = 650.0
 	Braking            = 0.5
 
 	wallElasticity  = 1.05
@@ -31,8 +31,8 @@ const (
 
 	HookCooldown         = 3.0
 	MaxHookLength        = 400
-	hookVelocity         = 550
-	hookBackwardVelocity = 550
+	hookVelocity         = 700
+	hookBackwardVelocity = 700
 	hookDamage           = 50
 
 	untouchableTime = 2.0
