@@ -19,6 +19,7 @@ const (
 	ClMsgTeleport
 	ClMsgBlink
 	ClMsgHook
+	ClMsgBoost
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 	SrvMsgPlayerTeleported
 	SrvMsgPlayerBlinked
 	SrvMsgPlayerHooked
+	SrvMsgPlayerBoosted
 )
 
 type Message struct {
@@ -73,7 +75,11 @@ type MoveMsg struct {
 }
 
 type RotateMsg struct {
-	Dir game.RotationDirection `msg:"dir"`
+	Dir game.Direction `msg:"dir"`
+}
+
+type BoostMsg struct {
+	Boosting bool `msg:"boosting"`
 }
 
 type PlayerMovedMsg struct {
@@ -82,8 +88,8 @@ type PlayerMovedMsg struct {
 }
 
 type PlayerRotatedMsg struct {
-	ID  string                 `msg:"id"`
-	Dir game.RotationDirection `msg:"dir"`
+	ID  string         `msg:"id"`
+	Dir game.Direction `msg:"dir"`
 }
 
 type PlayerTeleportedMsg struct {
@@ -100,6 +106,11 @@ type PlayerHookedMsg struct {
 
 type PlayerBrakedMsg struct {
 	ID string `msg:"id"`
+}
+
+type PlayerBoostedMsg struct {
+	ID       string `msg:"id"`
+	Boosting bool   `msg:"boosting"`
 }
 
 type GameStateMsg struct {

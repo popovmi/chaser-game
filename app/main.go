@@ -31,6 +31,7 @@ type playerImg struct {
 	animation *Animation
 	baseImg   *ebiten.Image
 	hookImg   *ebiten.Image
+	astroImg  *ebiten.Image
 }
 
 type untouchableTimer struct {
@@ -51,15 +52,15 @@ type gameClient struct {
 	windowH          int
 	cameraX, cameraY float64
 
-	fps float64
-	tps float64
+	worldImg         *ebiten.Image
+	portalStaticImg  *ebiten.Image
+	portalAnimations map[string]*Animation
+	brickImg         *ebiten.Image
+	healthImg        *ebiten.Image
+	healthFillImg    *ebiten.Image
+	playerImg        *ebiten.Image
+	playerImages     map[string]*playerImg
 
-	worldImg          *ebiten.Image
-	portalImg         *ebiten.Image
-	brickImg          *ebiten.Image
-	healthImg         *ebiten.Image
-	healthFillImg     *ebiten.Image
-	playerImages      map[string]*playerImg
 	untouchableTimers map[string]*untouchableTimer
 
 	tcpAddr string
@@ -100,7 +101,7 @@ func main() {
 	ebiten.SetWindowTitle("WARS")
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetVsyncEnabled(true)
+	ebiten.SetFullscreen(true)
 	if err := ebiten.RunGame(c); err != nil {
 		log.Fatal(err)
 	}

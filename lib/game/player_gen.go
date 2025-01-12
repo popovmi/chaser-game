@@ -7,6 +7,58 @@ import (
 )
 
 // DecodeMsg implements msgp.Decodable
+func (z *Direction) DecodeMsg(dc *msgp.Reader) (err error) {
+	{
+		var zb0001 int
+		zb0001, err = dc.ReadInt()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = Direction(zb0001)
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z Direction) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteInt(int(z))
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z Direction) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendInt(o, int(z))
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *Direction) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 int
+		zb0001, bts, err = msgp.ReadIntBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = Direction(zb0001)
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z Direction) Msgsize() (s int) {
+	s = msgp.IntSize
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
@@ -126,7 +178,13 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0003)
+				z.RotationDir = Direction(zb0003)
+			}
+		case "is_boosting":
+			z.Boosting, err = dc.ReadBool()
+			if err != nil {
+				err = msgp.WrapError(err, "Boosting")
+				return
 			}
 		case "hook":
 			if dc.IsNil() {
@@ -182,6 +240,36 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "Blinked")
 				return
 			}
+		case "teleporting":
+			z.Teleporting, err = dc.ReadBool()
+			if err != nil {
+				err = msgp.WrapError(err, "Teleporting")
+				return
+			}
+		case "dep_portal_id":
+			z.DepPortalID, err = dc.ReadString()
+			if err != nil {
+				err = msgp.WrapError(err, "DepPortalID")
+				return
+			}
+		case "arr_portal_id":
+			z.ArrPortalID, err = dc.ReadString()
+			if err != nil {
+				err = msgp.WrapError(err, "ArrPortalID")
+				return
+			}
+		case "teleported":
+			z.Teleported, err = dc.ReadBool()
+			if err != nil {
+				err = msgp.WrapError(err, "Teleported")
+				return
+			}
+		case "teleported_at":
+			z.TeleportedAt, err = dc.ReadTime()
+			if err != nil {
+				err = msgp.WrapError(err, "TeleportedAt")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -195,9 +283,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 23
+	// map header, size 29
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x17, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x1d, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -356,6 +444,16 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "RotationDir")
 		return
 	}
+	// write "is_boosting"
+	err = en.Append(0xab, 0x69, 0x73, 0x5f, 0x62, 0x6f, 0x6f, 0x73, 0x74, 0x69, 0x6e, 0x67)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.Boosting)
+	if err != nil {
+		err = msgp.WrapError(err, "Boosting")
+		return
+	}
 	// write "hook"
 	err = en.Append(0xa4, 0x68, 0x6f, 0x6f, 0x6b)
 	if err != nil {
@@ -433,15 +531,65 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "Blinked")
 		return
 	}
+	// write "teleporting"
+	err = en.Append(0xab, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x69, 0x6e, 0x67)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.Teleporting)
+	if err != nil {
+		err = msgp.WrapError(err, "Teleporting")
+		return
+	}
+	// write "dep_portal_id"
+	err = en.Append(0xad, 0x64, 0x65, 0x70, 0x5f, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x69, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.DepPortalID)
+	if err != nil {
+		err = msgp.WrapError(err, "DepPortalID")
+		return
+	}
+	// write "arr_portal_id"
+	err = en.Append(0xad, 0x61, 0x72, 0x72, 0x5f, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x69, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.ArrPortalID)
+	if err != nil {
+		err = msgp.WrapError(err, "ArrPortalID")
+		return
+	}
+	// write "teleported"
+	err = en.Append(0xaa, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.Teleported)
+	if err != nil {
+		err = msgp.WrapError(err, "Teleported")
+		return
+	}
+	// write "teleported_at"
+	err = en.Append(0xad, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	if err != nil {
+		return
+	}
+	err = en.WriteTime(z.TeleportedAt)
+	if err != nil {
+		err = msgp.WrapError(err, "TeleportedAt")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 23
+	// map header, size 29
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x17, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x1d, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -504,6 +652,9 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "turn_dir"
 	o = append(o, 0xa8, 0x74, 0x75, 0x72, 0x6e, 0x5f, 0x64, 0x69, 0x72)
 	o = msgp.AppendInt(o, int(z.RotationDir))
+	// string "is_boosting"
+	o = append(o, 0xab, 0x69, 0x73, 0x5f, 0x62, 0x6f, 0x6f, 0x73, 0x74, 0x69, 0x6e, 0x67)
+	o = msgp.AppendBool(o, z.Boosting)
 	// string "hook"
 	o = append(o, 0xa4, 0x68, 0x6f, 0x6f, 0x6b)
 	if z.Hook == nil {
@@ -533,6 +684,21 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "blinked"
 	o = append(o, 0xa7, 0x62, 0x6c, 0x69, 0x6e, 0x6b, 0x65, 0x64)
 	o = msgp.AppendBool(o, z.Blinked)
+	// string "teleporting"
+	o = append(o, 0xab, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x69, 0x6e, 0x67)
+	o = msgp.AppendBool(o, z.Teleporting)
+	// string "dep_portal_id"
+	o = append(o, 0xad, 0x64, 0x65, 0x70, 0x5f, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x69, 0x64)
+	o = msgp.AppendString(o, z.DepPortalID)
+	// string "arr_portal_id"
+	o = append(o, 0xad, 0x61, 0x72, 0x72, 0x5f, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x69, 0x64)
+	o = msgp.AppendString(o, z.ArrPortalID)
+	// string "teleported"
+	o = append(o, 0xaa, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64)
+	o = msgp.AppendBool(o, z.Teleported)
+	// string "teleported_at"
+	o = append(o, 0xad, 0x74, 0x65, 0x6c, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74)
+	o = msgp.AppendTime(o, z.TeleportedAt)
 	return
 }
 
@@ -656,7 +822,13 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0003)
+				z.RotationDir = Direction(zb0003)
+			}
+		case "is_boosting":
+			z.Boosting, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Boosting")
+				return
 			}
 		case "hook":
 			if msgp.IsNil(bts) {
@@ -711,6 +883,36 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Blinked")
 				return
 			}
+		case "teleporting":
+			z.Teleporting, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Teleporting")
+				return
+			}
+		case "dep_portal_id":
+			z.DepPortalID, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "DepPortalID")
+				return
+			}
+		case "arr_portal_id":
+			z.ArrPortalID, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ArrPortalID")
+				return
+			}
+		case "teleported":
+			z.Teleported, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Teleported")
+				return
+			}
+		case "teleported_at":
+			z.TeleportedAt, bts, err = msgp.ReadTimeBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TeleportedAt")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -725,13 +927,13 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Player) Msgsize() (s int) {
-	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 10 + z.DeathPos.Msgsize() + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 5
+	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 10 + z.DeathPos.Msgsize() + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 12 + msgp.BoolSize + 5
 	if z.Hook == nil {
 		s += msgp.NilSize
 	} else {
 		s += z.Hook.Msgsize()
 	}
-	s += 10 + msgp.TimeSize + 10 + msgp.BoolSize + 13 + msgp.StringPrefixSize + len(z.CaughtByID) + 9 + msgp.BoolSize + 11 + msgp.TimeSize + 8 + msgp.BoolSize
+	s += 10 + msgp.TimeSize + 10 + msgp.BoolSize + 13 + msgp.StringPrefixSize + len(z.CaughtByID) + 9 + msgp.BoolSize + 11 + msgp.TimeSize + 8 + msgp.BoolSize + 12 + msgp.BoolSize + 14 + msgp.StringPrefixSize + len(z.DepPortalID) + 14 + msgp.StringPrefixSize + len(z.ArrPortalID) + 11 + msgp.BoolSize + 14 + msgp.TimeSize
 	return
 }
 
@@ -783,58 +985,6 @@ func (z *PlayerStatus) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z PlayerStatus) Msgsize() (s int) {
-	s = msgp.IntSize
-	return
-}
-
-// DecodeMsg implements msgp.Decodable
-func (z *RotationDirection) DecodeMsg(dc *msgp.Reader) (err error) {
-	{
-		var zb0001 int
-		zb0001, err = dc.ReadInt()
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		(*z) = RotationDirection(zb0001)
-	}
-	return
-}
-
-// EncodeMsg implements msgp.Encodable
-func (z RotationDirection) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteInt(int(z))
-	if err != nil {
-		err = msgp.WrapError(err)
-		return
-	}
-	return
-}
-
-// MarshalMsg implements msgp.Marshaler
-func (z RotationDirection) MarshalMsg(b []byte) (o []byte, err error) {
-	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendInt(o, int(z))
-	return
-}
-
-// UnmarshalMsg implements msgp.Unmarshaler
-func (z *RotationDirection) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	{
-		var zb0001 int
-		zb0001, bts, err = msgp.ReadIntBytes(bts)
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		(*z) = RotationDirection(zb0001)
-	}
-	o = bts
-	return
-}
-
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z RotationDirection) Msgsize() (s int) {
 	s = msgp.IntSize
 	return
 }

@@ -3,35 +3,36 @@ package game
 import "math"
 
 const (
-	FieldWidth  = 2000
-	FieldHeight = 1500
+	FieldWidth  = 3200
+	FieldHeight = 2400
 
 	Radius = 30
 
-	PortalRadius   = 75
-	PortalCooldown = 5.0
+	PortalRadius     = 75
+	TeleportDuration = 0.8
+	PortalCooldown   = 3.0 + TeleportDuration
 
 	turnAngle     = math.Pi * 1.5
 	moveTurnAngle = math.Pi * 1
 
-	acceleration       = 10.0
-	maxVelocity        = 300.0
-	maxCollideVelocity = 500
-	Braking            = 0.75
+	acceleration       = 100.0
+	maxVelocity        = 175.0
+	boostAcceleration  = 100
+	maxBoostVelocity   = 300.0
+	maxCollideVelocity = 500.0
+	Braking            = 0.5
 
-	wallElasticity  = 1.1
+	wallElasticity  = 5
 	BrickElasticity = 0.6
-
-	friction = 0.9
 
 	blinkDistance = 500
 	BlinkDuration = 0.4
 	BlinkCooldown = 2.0 + BlinkDuration
 
 	HookCooldown         = 3.0
-	MaxHookLength        = 500
-	hookVelocity         = 750
-	hookBackwardVelocity = 750
+	MaxHookLength        = 400
+	hookVelocity         = 500
+	hookBackwardVelocity = 500
 	hookDamage           = 50
 
 	untouchableTime = 2.0

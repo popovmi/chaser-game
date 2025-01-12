@@ -28,10 +28,10 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		c.game = state
 		for _, player := range c.game.Players {
-			c.сreatePlayerImages(player)
+			c.createPlayerImages(player)
 		}
-		c.drawPortals()
 		c.drawBricks()
+		c.createPortalsAnimations()
 		c.openUDPConnection()
 		c.screen = screenGame
 
@@ -41,7 +41,7 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			return err
 		}
 		c.game.Players[player.ID] = player
-		c.сreatePlayerImages(player)
+		c.createPlayerImages(player)
 
 	case messages.SrvMsgGameState:
 		state, err := messages.Unmarshal(&messages.GameStateMsg{}, msg.B)
@@ -59,10 +59,13 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		for k, player := range state.Game.Players {
 			c.game.Players[k] = player
-			c.сreatePlayerImages(player)
+			c.createPlayerImages(player)
 		}
 		for k, link := range state.Game.PortalNetwork.Links {
 			c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
+		}
+		for k, portal := range state.Game.PortalNetwork.Portals {
+			*c.game.PortalNetwork.Portals[k] = *portal
 		}
 		c.game.PreviousTick = time.Now().UnixMilli()
 		c.moveCamera()
@@ -121,6 +124,15 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 		}
 		if brakedMsg.ID != c.clientID {
 			c.game.Players[brakedMsg.ID].Brake()
+		}
+
+	case messages.SrvMsgPlayerBoosted:
+		boostedMsg, err := messages.Unmarshal(&messages.PlayerBoostedMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+		if boostedMsg.ID != c.clientID {
+			c.game.Players[boostedMsg.ID].HandleBoost(boostedMsg.Boosting)
 		}
 
 	default:

@@ -11,9 +11,10 @@ import (
 //go:generate msgp
 
 type Portal struct {
-	ID     string          `msg:"id"`
-	LinkID string          `msg:"link_id"`
-	Pos    vector.Vector2D `msg:"pos"`
+	ID         string          `msg:"id"`
+	LinkID     string          `msg:"link_id"`
+	LastUsedAt time.Time       `msg:"last_used_at"`
+	Pos        vector.Vector2D `msg:"pos"`
 }
 
 func newPortal(linkID string, x, y float64) *Portal {
@@ -21,7 +22,7 @@ func newPortal(linkID string, x, y float64) *Portal {
 	if err != nil {
 		panic(err)
 	}
-	return &Portal{id, linkID, vector.Vector2D{X: x, Y: y}}
+	return &Portal{ID: id, LinkID: linkID, Pos: vector.Vector2D{X: x, Y: y}}
 }
 
 func (p *Portal) Touching(plr *Player) bool {
@@ -85,16 +86,39 @@ func (pn *PortalNetwork) Teleport(player *Player) bool {
 	link := pn.Links[departure.LinkID]
 	for _, arrivalID := range link.PortalIDs {
 		if arrivalID != departure.ID {
+			player.Teleporting = true
+			player.DepPortalID = departure.ID
+			player.ArrPortalID = arrivalID
+			now := time.Now()
+			player.TeleportedAt = now
+			departure.LastUsedAt = now
+			pn.Portals[arrivalID].LastUsedAt = now
 			link.LastUsed[player.ID] = time.Now()
-			dx := pn.Portals[arrivalID].Pos.X - player.Position.X
-			dy := pn.Portals[arrivalID].Pos.Y - player.Position.Y
-			player.Position.X = pn.Portals[arrivalID].Pos.X
-			player.Position.Y = pn.Portals[arrivalID].Pos.Y
-			if player.Hook != nil {
-				player.Hook.End.Add(dx, dy)
-			}
 			return true
 		}
 	}
 	return false
+}
+
+func (pn *PortalNetwork) TeleportTick(player *Player) {
+	if !player.Teleporting {
+		return
+	}
+	depPort := pn.Portals[player.DepPortalID]
+	arrPort := pn.Portals[player.ArrPortalID]
+	link := pn.Links[depPort.LinkID]
+	progress := time.Since(link.LastUsed[player.ID]).Seconds() / TeleportDuration
+	if progress >= 0.5 && !player.Teleported {
+		dx := arrPort.Pos.X - player.Position.X
+		dy := arrPort.Pos.Y - player.Position.Y
+		player.Position.Add(dx, dy)
+		if player.Hook != nil {
+			player.Hook.End.Add(dx, dy)
+		}
+		player.Teleported = true
+	}
+	if progress >= 1 {
+		player.Teleporting = false
+		player.Teleported = false
+	}
 }

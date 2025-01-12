@@ -11,16 +11,16 @@ import (
 
 //go:generate msgp
 
-//msgp:replace RotationDirection with:int
-type RotationDirection int
+//msgp:replace Direction with:int
+type Direction int
 
 const (
-	RotationNone RotationDirection = iota
-	RotationPositive
-	RotationNegative
+	DirectionNone Direction = iota
+	DirectionPositive
+	DirectionNegative
 )
 
-//msgp:replace RotationDirection with:int
+//msgp:replace Direction with:int
 type PlayerStatus int
 
 const (
@@ -45,11 +45,12 @@ type Player struct {
 	DeadAt      time.Time       `msg:"dead_at"`
 	RespawnedAt time.Time       `msg:"respawned_at"`
 
-	Position    vector.Vector2D   `msg:"position"`
-	Velocity    vector.Vector2D   `msg:"velocity"`
-	Angle       float64           `msg:"angle"`
-	MoveDir     string            `msg:"move_dir"`
-	RotationDir RotationDirection `msg:"turn_dir"`
+	Position    vector.Vector2D `msg:"position"`
+	Velocity    vector.Vector2D `msg:"velocity"`
+	Angle       float64         `msg:"angle"`
+	MoveDir     string          `msg:"move_dir"`
+	RotationDir Direction       `msg:"turn_dir"`
+	Boosting    bool            `msg:"is_boosting"`
 
 	Hook       *Hook     `msg:"hook"`
 	HookedAt   time.Time `msg:"hooked_at"`
@@ -59,6 +60,12 @@ type Player struct {
 	Blinking  bool      `msg:"blinking"`
 	BlinkedAt time.Time `msg:"blinked_at"`
 	Blinked   bool      `msg:"blinked"`
+
+	Teleporting  bool      `msg:"teleporting"`
+	DepPortalID  string    `msg:"dep_portal_id"`
+	ArrPortalID  string    `msg:"arr_portal_id"`
+	Teleported   bool      `msg:"teleported"`
+	TeleportedAt time.Time `msg:"teleported_at"`
 
 	mu sync.Mutex
 }
@@ -79,13 +86,12 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 		return
 	}
 	p.BlinkTick()
-	if !p.IsHooked {
-		p.Friction(dt)
-		p.HookTick(dt, players)
+	if !p.IsHooked && !p.Teleporting {
 		p.Rotate(dt)
+		p.HookTick(dt, players)
 
 		if p.Hook == nil || !p.Hook.Stuck {
-			p.Accelerate()
+			p.Accelerate(dt)
 			p.Step(dt)
 		}
 	}
@@ -110,57 +116,56 @@ func (p *Player) BlinkTick() {
 }
 
 func (p *Player) Rotate(dt float64) {
-	if p.RotationDir != RotationNone {
+	if p.RotationDir != DirectionNone {
 		var angle float64
-		if p.MoveDir == "" {
+		if p.MoveDir == "" && !p.Boosting {
 			angle = turnAngle * dt
 		} else {
 			angle = moveTurnAngle * dt
 		}
-		if p.RotationDir == RotationNegative {
+		if p.RotationDir == DirectionNegative {
 			angle = -angle
 		}
 
 		p.Angle += angle
 		p.Angle = math.Mod(p.Angle, 2*math.Pi)
-		p.RotateHook()
 	}
 }
 
-func (p *Player) Accelerate() {
-	var dvx, dvy float64
+func (p *Player) Accelerate(dt float64) {
+	var angle float64
 	switch p.MoveDir {
-	case "":
 	case "u":
-		dvy -= acceleration
+		angle = -math.Pi / 2
 	case "d":
-		dvy += acceleration
+		angle = math.Pi / 2
 	case "l":
-		dvx -= acceleration
+		angle = math.Pi
 	case "r":
-		dvx += acceleration
+		angle = 0
 	case "ul":
-		dvy -= acceleration
-		dvx -= acceleration
+		angle = -3 * math.Pi / 4
 	case "ur":
-		dvy -= acceleration
-		dvx += acceleration
+		angle = -math.Pi / 4
 	case "dl":
-		dvy += acceleration
-		dvx -= acceleration
+		angle = 3 * math.Pi / 4
 	case "dr":
-		dvy += acceleration
-		dvx += acceleration
+		angle = math.Pi / 4
 	}
-
-	maxV := maxVelocity
-	if p.Velocity.Length() > maxVelocity {
-		maxV = maxCollideVelocity
+	if p.MoveDir != "" {
+		p.Velocity.Add(acceleration*math.Cos(angle), acceleration*math.Sin(angle))
 	}
-
-	p.Velocity.Add(dvx, dvy)
-	p.Velocity.LimitLength(maxV)
-
+	if p.Boosting {
+		p.Velocity.Add(boostAcceleration*math.Cos(p.Angle), boostAcceleration*math.Sin(p.Angle))
+	}
+	newSpeed := p.Velocity.Length()
+	if newSpeed > maxCollideVelocity {
+		p.Velocity.LimitLength(maxCollideVelocity)
+	} else if newSpeed > maxBoostVelocity {
+		p.Velocity.LimitLength(maxBoostVelocity)
+	} else if newSpeed > maxVelocity {
+		p.Velocity.LimitLength(maxVelocity)
+	}
 }
 
 func (p *Player) Clamp() bool {
@@ -185,19 +190,11 @@ func (p *Player) Clamp() bool {
 		p.Velocity.Y *= -wallElasticity
 		hit = true
 	}
-	if hit {
-		p.Velocity.LimitLength(maxCollideVelocity)
-	}
 	return hit
 }
 
 func (p *Player) Step(dt float64) {
 	p.Position.Add(p.Velocity.X*dt, p.Velocity.Y*dt)
-}
-
-func (p *Player) Friction(dt float64) {
-	fr := friction
-	p.Velocity.Mul(math.Exp(-fr * dt))
 }
 
 func (p *Player) HandleBlink() {
@@ -211,7 +208,13 @@ func (p *Player) HandleMove(dir string) {
 	p.MoveDir = dir
 }
 
-func (p *Player) HandleRotate(dir RotationDirection) {
+func (p *Player) HandleBoost(boosting bool) {
+	if !p.IsHooked && (p.Hook == nil || !p.Hook.Stuck) {
+		p.Boosting = boosting
+	}
+}
+
+func (p *Player) HandleRotate(dir Direction) {
 	p.RotationDir = dir
 }
 
@@ -279,5 +282,6 @@ func (p *Player) die() {
 	p.Velocity = vector.NewVector2D(0, 0)
 	p.Blinking = false
 	p.Blinked = false
+	p.Angle = 0
 	p.Hook = nil
 }

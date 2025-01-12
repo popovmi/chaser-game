@@ -36,12 +36,6 @@ func (z *Hook) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "Vel")
 				return
 			}
-		case "current_distance":
-			z.CurrentDistance, err = dc.ReadFloat64()
-			if err != nil {
-				err = msgp.WrapError(err, "CurrentDistance")
-				return
-			}
 		case "stuck":
 			z.Stuck, err = dc.ReadBool()
 			if err != nil {
@@ -73,9 +67,9 @@ func (z *Hook) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Hook) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 6
+	// map header, size 5
 	// write "end"
-	err = en.Append(0x86, 0xa3, 0x65, 0x6e, 0x64)
+	err = en.Append(0x85, 0xa3, 0x65, 0x6e, 0x64)
 	if err != nil {
 		return
 	}
@@ -92,16 +86,6 @@ func (z *Hook) EncodeMsg(en *msgp.Writer) (err error) {
 	err = z.Vel.EncodeMsg(en)
 	if err != nil {
 		err = msgp.WrapError(err, "Vel")
-		return
-	}
-	// write "current_distance"
-	err = en.Append(0xb0, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65)
-	if err != nil {
-		return
-	}
-	err = en.WriteFloat64(z.CurrentDistance)
-	if err != nil {
-		err = msgp.WrapError(err, "CurrentDistance")
 		return
 	}
 	// write "stuck"
@@ -140,9 +124,9 @@ func (z *Hook) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Hook) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 6
+	// map header, size 5
 	// string "end"
-	o = append(o, 0x86, 0xa3, 0x65, 0x6e, 0x64)
+	o = append(o, 0x85, 0xa3, 0x65, 0x6e, 0x64)
 	o, err = z.End.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "End")
@@ -155,9 +139,6 @@ func (z *Hook) MarshalMsg(b []byte) (o []byte, err error) {
 		err = msgp.WrapError(err, "Vel")
 		return
 	}
-	// string "current_distance"
-	o = append(o, 0xb0, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65)
-	o = msgp.AppendFloat64(o, z.CurrentDistance)
 	// string "stuck"
 	o = append(o, 0xa5, 0x73, 0x74, 0x75, 0x63, 0x6b)
 	o = msgp.AppendBool(o, z.Stuck)
@@ -200,12 +181,6 @@ func (z *Hook) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Vel")
 				return
 			}
-		case "current_distance":
-			z.CurrentDistance, bts, err = msgp.ReadFloat64Bytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "CurrentDistance")
-				return
-			}
 		case "stuck":
 			z.Stuck, bts, err = msgp.ReadBoolBytes(bts)
 			if err != nil {
@@ -238,6 +213,6 @@ func (z *Hook) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Hook) Msgsize() (s int) {
-	s = 1 + 4 + z.End.Msgsize() + 4 + z.Vel.Msgsize() + 17 + msgp.Float64Size + 6 + msgp.BoolSize + 13 + msgp.BoolSize + 17 + msgp.StringPrefixSize + len(z.CaughtPlayerID)
+	s = 1 + 4 + z.End.Msgsize() + 4 + z.Vel.Msgsize() + 6 + msgp.BoolSize + 13 + msgp.BoolSize + 17 + msgp.StringPrefixSize + len(z.CaughtPlayerID)
 	return
 }

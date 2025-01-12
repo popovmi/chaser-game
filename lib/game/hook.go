@@ -10,12 +10,11 @@ import (
 //go:generate msgp
 
 type Hook struct {
-	End             vector.Vector2D `msg:"end"`
-	Vel             vector.Vector2D `msg:"vel"`
-	CurrentDistance float64         `msg:"current_distance"`
-	Stuck           bool            `msg:"stuck"`
-	IsReturning     bool            `msg:"is_returning"`
-	CaughtPlayerID  string          `msg:"caught_player_id"`
+	End            vector.Vector2D `msg:"end"`
+	Vel            vector.Vector2D `msg:"vel"`
+	Stuck          bool            `msg:"stuck"`
+	IsReturning    bool            `msg:"is_returning"`
+	CaughtPlayerID string          `msg:"caught_player_id"`
 }
 
 func (p *Player) HookTick(dt float64, players map[string]*Player) {
@@ -52,7 +51,7 @@ func (p *Player) HookTick(dt float64, players map[string]*Player) {
 		target.Position.X = p.Hook.End.X
 		target.Position.Y = p.Hook.End.Y
 	} else if !p.Hook.IsReturning {
-		p.Hook.Clamp()
+		p.HookClamp()
 	}
 
 	if p.IsHookDone() {
@@ -90,7 +89,8 @@ func (p *Player) IsHookDone() bool {
 	return false
 }
 
-func (h *Hook) Clamp() {
+func (p *Player) HookClamp() {
+	h := p.Hook
 	if h.End.X < 0 {
 		h.End.X = 0
 		h.Stuck = true
@@ -108,7 +108,7 @@ func (h *Hook) Clamp() {
 		h.Stuck = true
 	}
 	if h.Stuck {
-		h.IsReturning = true
+		p.Boosting = false
 	}
 }
 
@@ -145,6 +145,7 @@ func (p *Player) takeHookHit(hookedPlayer *Player) {
 	p.Velocity.X = 0
 	p.Velocity.Y = 0
 	p.MoveDir = ""
+	p.Boosting = false
 }
 
 func (p *Player) RotateHook() {
