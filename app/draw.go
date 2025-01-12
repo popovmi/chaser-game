@@ -111,10 +111,10 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		nameTextOptions.GeoM.Translate(p.Position.X-textW/2, p.Position.Y+game.Radius)
 
 		if isDead {
-			imageDrawOptions.ColorScale.ScaleWithColor(color.Gray{Y: 50})
+			imageDrawOptions.ColorScale.ScaleWithColor(color.Gray{Y: 150})
 			imageDrawOptions.ColorScale.ScaleAlpha(float32(1 - timeSinceDeath))
 
-			nameTextOptions.ColorScale.ScaleWithColor(color.Gray{Y: 50})
+			nameTextOptions.ColorScale.ScaleWithColor(color.Gray{Y: 150})
 			nameTextOptions.ColorScale.ScaleAlpha(float32(1 - timeSinceDeath))
 		} else {
 			if ut, ok := c.untouchableTimers[p.ID]; ok && !ut.visible {
