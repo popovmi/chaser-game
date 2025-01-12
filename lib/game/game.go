@@ -11,7 +11,7 @@ import (
 
 type Game struct {
 	Players       map[string]*Player `msg:"players"`
-	PortalNetwork *PortalNetwork     `msg:"portalNetwork"`
+	PortalNetwork *PortalNetwork     `msg:"portal_network"`
 	Bricks        []*Brick           `msg:"bricks"`
 
 	Counter      atomic.Uint64 `msg:"-"`

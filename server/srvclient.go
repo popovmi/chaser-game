@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/tinylib/msgp/msgp"
-	
+
 	"wars/lib/game"
 	"wars/lib/messages"
 )

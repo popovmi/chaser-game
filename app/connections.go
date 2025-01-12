@@ -29,7 +29,7 @@ func (c *gameClient) handleTCP() {
 			break
 		}
 
-		err := c.handleMessage(msg)
+		err := c.handleMessage(&msg)
 		if err != nil {
 			slog.Error("could not handle TCP message", err.Error())
 			break
@@ -57,15 +57,21 @@ func (c *gameClient) openUDPConnection() {
 }
 
 func (c *gameClient) handleUDP() {
-	var msg messages.Message
+	buf := make([]byte, 1024*10)
 	for {
-		if err := msgp.Decode(c.UDPConn, &msg); err != nil {
+		n, err := c.UDPConn.Read(buf)
+		if err != nil {
+			slog.Error("could not read UDP message", err.Error())
+			continue
+		}
+		msg, err := messages.Unmarshal(&messages.Message{}, buf[:n])
+		if err != nil {
 			slog.Error("could not decode UDP message", err.Error())
-			break
+			continue
 		}
 		if err := c.handleMessage(msg); err != nil {
 			slog.Error("could not handle UDP message", "error", err.Error())
-			break
+			continue
 		}
 	}
 }

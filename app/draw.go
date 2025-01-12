@@ -41,8 +41,8 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 	case screenGame:
 		c.drawGame(screen)
 		if p, ok := c.game.Players[c.clientID]; ok {
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0, 40)
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Length()), 0, 60)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0, c.windowH)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Length()), 0, c.windowH-20)
 		}
 	default:
 	}
@@ -66,10 +66,10 @@ func (c *gameClient) drawMain(screen *ebiten.Image) {
 
 func (c *gameClient) drawGame(screen *ebiten.Image) {
 	c.drawWorld(screen)
-	c.drawSpells(screen)
-	c.drawPlayerList(screen)
 	c.drawPortals(screen)
+	c.drawSpells(screen)
 	c.drawPlayers(screen)
+	c.drawPlayerList(screen)
 }
 
 func (c *gameClient) drawWorld(screen *ebiten.Image) {
@@ -80,8 +80,11 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.Players {
-		image := c.playerImages[p.ID].astroImg
-		//image := c.playerImages[p.ID].animation.Image()
+		playerImages, ok := c.playerImages[p.ID]
+		if !ok {
+			continue
+		}
+		image := playerImages.astroImg
 		imageW, imageH := float64(image.Bounds().Dx()), float64(image.Bounds().Dy())
 
 		lineSpacing := 1.1

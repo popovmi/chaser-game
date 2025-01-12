@@ -66,7 +66,7 @@ func (z *Game) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "portalNetwork":
+		case "portal_network":
 			if dc.IsNil() {
 				err = dc.ReadNil()
 				if err != nil {
@@ -158,8 +158,8 @@ func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
 			}
 		}
 	}
-	// write "portalNetwork"
-	err = en.Append(0xad, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
+	// write "portal_network"
+	err = en.Append(0xae, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
 	if err != nil {
 		return
 	}
@@ -221,8 +221,8 @@ func (z *Game) MarshalMsg(b []byte) (o []byte, err error) {
 			}
 		}
 	}
-	// string "portalNetwork"
-	o = append(o, 0xad, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
+	// string "portal_network"
+	o = append(o, 0xae, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
 	if z.PortalNetwork == nil {
 		o = msgp.AppendNil(o)
 	} else {
@@ -308,7 +308,7 @@ func (z *Game) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "portalNetwork":
+		case "portal_network":
 			if msgp.IsNil(bts) {
 				bts, err = msgp.ReadNilBytes(bts)
 				if err != nil {
@@ -381,7 +381,7 @@ func (z *Game) Msgsize() (s int) {
 			}
 		}
 	}
-	s += 14
+	s += 15
 	if z.PortalNetwork == nil {
 		s += msgp.NilSize
 	} else {

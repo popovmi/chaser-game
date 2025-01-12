@@ -93,7 +93,7 @@ func (pn *PortalNetwork) Teleport(player *Player) bool {
 			player.TeleportedAt = now
 			departure.LastUsedAt = now
 			pn.Portals[arrivalID].LastUsedAt = now
-			link.LastUsed[player.ID] = time.Now()
+			link.LastUsed[player.ID] = now
 			return true
 		}
 	}

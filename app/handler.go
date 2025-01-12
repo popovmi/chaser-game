@@ -8,7 +8,7 @@ import (
 	"wars/lib/messages"
 )
 
-func (c *gameClient) handleMessage(msg messages.Message) error {
+func (c *gameClient) handleMessage(msg *messages.Message) error {
 	switch msg.T {
 	case messages.SrvMsgYourID:
 		userIdMsg, err := messages.Unmarshal(&messages.YourIDMsg{}, msg.B)
