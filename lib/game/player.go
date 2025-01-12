@@ -86,7 +86,6 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 	}
 	p.BlinkTick()
 	if !p.IsHooked && !p.Teleporting {
-		p.Friction(dt)
 		p.HookTick(dt, players)
 		p.Rotate(dt)
 
@@ -198,11 +197,6 @@ func (p *Player) Clamp() bool {
 
 func (p *Player) Step(dt float64) {
 	p.Position.Add(p.Velocity.X*dt, p.Velocity.Y*dt)
-}
-
-func (p *Player) Friction(dt float64) {
-	fr := friction
-	p.Velocity.Mul(math.Exp(-fr * dt))
 }
 
 func (p *Player) HandleBlink() {

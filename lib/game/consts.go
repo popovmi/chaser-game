@@ -23,8 +23,6 @@ const (
 	wallElasticity  = 1.1
 	BrickElasticity = 0.6
 
-	friction = 0.9
-
 	blinkDistance = 500
 	BlinkDuration = 0.4
 	BlinkCooldown = 2.0 + BlinkDuration
