@@ -15,12 +15,14 @@ const (
 	turnAngle     = math.Pi * 1.5
 	moveTurnAngle = math.Pi * 1
 
-	acceleration       = 400.0
-	maxVelocity        = 200.0
-	maxCollideVelocity = 400.0
-	Braking            = 0.75
+	acceleration       = 100.0
+	maxVelocity        = 175.0
+	boostAcceleration  = 100
+	maxBoostVelocity   = 300.0
+	maxCollideVelocity = 500.0
+	Braking            = 0.5
 
-	wallElasticity  = 1.2
+	wallElasticity  = 5
 	BrickElasticity = 0.6
 
 	blinkDistance = 500
@@ -29,8 +31,8 @@ const (
 
 	HookCooldown         = 3.0
 	MaxHookLength        = 400
-	hookVelocity         = 650
-	hookBackwardVelocity = 650
+	hookVelocity         = 500
+	hookBackwardVelocity = 500
 	hookDamage           = 50
 
 	untouchableTime = 2.0

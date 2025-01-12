@@ -181,6 +181,20 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		}
 		srv.broadcastUDP(b)
 
+	case messages.ClMsgBoost:
+		boostReq, err := messages.Unmarshal(&messages.BoostMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+		c.HandleBoost(boostReq.Boosting)
+		boostedMsg := &messages.PlayerBoostedMsg{ID: c.ID, Boosting: boostReq.Boosting}
+		b, err := messages.New(messages.SrvMsgPlayerBoosted, boostedMsg).MarshalMsg(nil)
+		if err != nil {
+			slog.Error("could not encode message", "error", err.Error(), "msg", boostedMsg)
+			return err
+		}
+		srv.broadcastUDP(b)
+
 	default:
 		return nil
 	}

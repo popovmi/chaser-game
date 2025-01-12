@@ -7,6 +7,58 @@ import (
 )
 
 // DecodeMsg implements msgp.Decodable
+func (z *Direction) DecodeMsg(dc *msgp.Reader) (err error) {
+	{
+		var zb0001 int
+		zb0001, err = dc.ReadInt()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = Direction(zb0001)
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z Direction) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteInt(int(z))
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z Direction) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendInt(o, int(z))
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *Direction) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 int
+		zb0001, bts, err = msgp.ReadIntBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = Direction(zb0001)
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z Direction) Msgsize() (s int) {
+	s = msgp.IntSize
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
@@ -126,7 +178,13 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0003)
+				z.RotationDir = Direction(zb0003)
+			}
+		case "is_boosting":
+			z.Boosting, err = dc.ReadBool()
+			if err != nil {
+				err = msgp.WrapError(err, "Boosting")
+				return
 			}
 		case "hook":
 			if dc.IsNil() {
@@ -225,9 +283,9 @@ func (z *Player) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 28
+	// map header, size 29
 	// write "id"
-	err = en.Append(0xde, 0x0, 0x1c, 0xa2, 0x69, 0x64)
+	err = en.Append(0xde, 0x0, 0x1d, 0xa2, 0x69, 0x64)
 	if err != nil {
 		return
 	}
@@ -386,6 +444,16 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "RotationDir")
 		return
 	}
+	// write "is_boosting"
+	err = en.Append(0xab, 0x69, 0x73, 0x5f, 0x62, 0x6f, 0x6f, 0x73, 0x74, 0x69, 0x6e, 0x67)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.Boosting)
+	if err != nil {
+		err = msgp.WrapError(err, "Boosting")
+		return
+	}
 	// write "hook"
 	err = en.Append(0xa4, 0x68, 0x6f, 0x6f, 0x6b)
 	if err != nil {
@@ -519,9 +587,9 @@ func (z *Player) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 28
+	// map header, size 29
 	// string "id"
-	o = append(o, 0xde, 0x0, 0x1c, 0xa2, 0x69, 0x64)
+	o = append(o, 0xde, 0x0, 0x1d, 0xa2, 0x69, 0x64)
 	o = msgp.AppendString(o, z.ID)
 	// string "name"
 	o = append(o, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
@@ -584,6 +652,9 @@ func (z *Player) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "turn_dir"
 	o = append(o, 0xa8, 0x74, 0x75, 0x72, 0x6e, 0x5f, 0x64, 0x69, 0x72)
 	o = msgp.AppendInt(o, int(z.RotationDir))
+	// string "is_boosting"
+	o = append(o, 0xab, 0x69, 0x73, 0x5f, 0x62, 0x6f, 0x6f, 0x73, 0x74, 0x69, 0x6e, 0x67)
+	o = msgp.AppendBool(o, z.Boosting)
 	// string "hook"
 	o = append(o, 0xa4, 0x68, 0x6f, 0x6f, 0x6b)
 	if z.Hook == nil {
@@ -751,7 +822,13 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "RotationDir")
 					return
 				}
-				z.RotationDir = RotationDirection(zb0003)
+				z.RotationDir = Direction(zb0003)
+			}
+		case "is_boosting":
+			z.Boosting, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Boosting")
+				return
 			}
 		case "hook":
 			if msgp.IsNil(bts) {
@@ -850,7 +927,7 @@ func (z *Player) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Player) Msgsize() (s int) {
-	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 10 + z.DeathPos.Msgsize() + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 5
+	s = 3 + 3 + msgp.StringPrefixSize + len(z.ID) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + z.Color.Msgsize() + 10 + msgp.TimeSize + 7 + msgp.IntSize + 3 + msgp.Float64Size + 6 + msgp.IntSize + 7 + msgp.IntSize + 10 + z.DeathPos.Msgsize() + 8 + msgp.TimeSize + 13 + msgp.TimeSize + 9 + z.Position.Msgsize() + 9 + z.Velocity.Msgsize() + 6 + msgp.Float64Size + 9 + msgp.StringPrefixSize + len(z.MoveDir) + 9 + msgp.IntSize + 12 + msgp.BoolSize + 5
 	if z.Hook == nil {
 		s += msgp.NilSize
 	} else {
@@ -908,58 +985,6 @@ func (z *PlayerStatus) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z PlayerStatus) Msgsize() (s int) {
-	s = msgp.IntSize
-	return
-}
-
-// DecodeMsg implements msgp.Decodable
-func (z *RotationDirection) DecodeMsg(dc *msgp.Reader) (err error) {
-	{
-		var zb0001 int
-		zb0001, err = dc.ReadInt()
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		(*z) = RotationDirection(zb0001)
-	}
-	return
-}
-
-// EncodeMsg implements msgp.Encodable
-func (z RotationDirection) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteInt(int(z))
-	if err != nil {
-		err = msgp.WrapError(err)
-		return
-	}
-	return
-}
-
-// MarshalMsg implements msgp.Marshaler
-func (z RotationDirection) MarshalMsg(b []byte) (o []byte, err error) {
-	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendInt(o, int(z))
-	return
-}
-
-// UnmarshalMsg implements msgp.Unmarshaler
-func (z *RotationDirection) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	{
-		var zb0001 int
-		zb0001, bts, err = msgp.ReadIntBytes(bts)
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		(*z) = RotationDirection(zb0001)
-	}
-	o = bts
-	return
-}
-
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z RotationDirection) Msgsize() (s int) {
 	s = msgp.IntSize
 	return
 }

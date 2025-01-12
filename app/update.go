@@ -117,7 +117,7 @@ func (c *gameClient) joinGame(name string) error {
 	return nil
 }
 
-func (c *gameClient) rotate(dir game.RotationDirection) {
+func (c *gameClient) rotate(dir game.Direction) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.RotationDir {
 		go func() {
@@ -198,6 +198,19 @@ func (c *gameClient) brake() {
 	}
 }
 
+func (c *gameClient) boost(boosting bool) {
+	p, ok := c.game.Players[c.clientID]
+	if ok && p.Boosting != boosting {
+		go func() {
+			err := c.sendTCPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
+			if err != nil {
+				slog.Error("could not send brake", "error", err.Error())
+			}
+		}()
+		p.HandleBoost(boosting)
+	}
+}
+
 func (c *gameClient) HandleInput() {
 	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
 		c.teleport()
@@ -213,16 +226,17 @@ func (c *gameClient) HandleInput() {
 	}
 
 	c.rotate(getRotateDirection())
+	c.boost(ebiten.IsKeyPressed(ebiten.KeyUp))
 	c.move(getMoveDirection())
 }
 
-func getRotateDirection() game.RotationDirection {
-	var rotateDir game.RotationDirection
+func getRotateDirection() game.Direction {
+	var rotateDir game.Direction
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		rotateDir = game.RotationNegative
+		rotateDir = game.DirectionNegative
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		rotateDir = game.RotationPositive
+		rotateDir = game.DirectionPositive
 	}
 	return rotateDir
 }

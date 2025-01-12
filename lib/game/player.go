@@ -11,16 +11,16 @@ import (
 
 //go:generate msgp
 
-//msgp:replace RotationDirection with:int
-type RotationDirection int
+//msgp:replace Direction with:int
+type Direction int
 
 const (
-	RotationNone RotationDirection = iota
-	RotationPositive
-	RotationNegative
+	DirectionNone Direction = iota
+	DirectionPositive
+	DirectionNegative
 )
 
-//msgp:replace RotationDirection with:int
+//msgp:replace Direction with:int
 type PlayerStatus int
 
 const (
@@ -45,11 +45,12 @@ type Player struct {
 	DeadAt      time.Time       `msg:"dead_at"`
 	RespawnedAt time.Time       `msg:"respawned_at"`
 
-	Position    vector.Vector2D   `msg:"position"`
-	Velocity    vector.Vector2D   `msg:"velocity"`
-	Angle       float64           `msg:"angle"`
-	MoveDir     string            `msg:"move_dir"`
-	RotationDir RotationDirection `msg:"turn_dir"`
+	Position    vector.Vector2D `msg:"position"`
+	Velocity    vector.Vector2D `msg:"velocity"`
+	Angle       float64         `msg:"angle"`
+	MoveDir     string          `msg:"move_dir"`
+	RotationDir Direction       `msg:"turn_dir"`
+	Boosting    bool            `msg:"is_boosting"`
 
 	Hook       *Hook     `msg:"hook"`
 	HookedAt   time.Time `msg:"hooked_at"`
@@ -86,8 +87,8 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 	}
 	p.BlinkTick()
 	if !p.IsHooked && !p.Teleporting {
-		p.HookTick(dt, players)
 		p.Rotate(dt)
+		p.HookTick(dt, players)
 
 		if p.Hook == nil || !p.Hook.Stuck {
 			p.Accelerate(dt)
@@ -115,14 +116,14 @@ func (p *Player) BlinkTick() {
 }
 
 func (p *Player) Rotate(dt float64) {
-	if p.RotationDir != RotationNone {
+	if p.RotationDir != DirectionNone {
 		var angle float64
-		if p.MoveDir == "" {
+		if p.MoveDir == "" && !p.Boosting {
 			angle = turnAngle * dt
 		} else {
 			angle = moveTurnAngle * dt
 		}
-		if p.RotationDir == RotationNegative {
+		if p.RotationDir == DirectionNegative {
 			angle = -angle
 		}
 
@@ -150,13 +151,18 @@ func (p *Player) Accelerate(dt float64) {
 		angle = 3 * math.Pi / 4
 	case "dr":
 		angle = math.Pi / 4
-	default:
-		return
 	}
-	p.Velocity.Add(acceleration*math.Cos(angle)*dt, acceleration*math.Sin(angle)*dt)
+	if p.MoveDir != "" {
+		p.Velocity.Add(acceleration*math.Cos(angle), acceleration*math.Sin(angle))
+	}
+	if p.Boosting {
+		p.Velocity.Add(boostAcceleration*math.Cos(p.Angle), boostAcceleration*math.Sin(p.Angle))
+	}
 	newSpeed := p.Velocity.Length()
 	if newSpeed > maxCollideVelocity {
 		p.Velocity.LimitLength(maxCollideVelocity)
+	} else if newSpeed > maxBoostVelocity {
+		p.Velocity.LimitLength(maxBoostVelocity)
 	} else if newSpeed > maxVelocity {
 		p.Velocity.LimitLength(maxVelocity)
 	}
@@ -202,7 +208,13 @@ func (p *Player) HandleMove(dir string) {
 	p.MoveDir = dir
 }
 
-func (p *Player) HandleRotate(dir RotationDirection) {
+func (p *Player) HandleBoost(boosting bool) {
+	if !p.IsHooked && (p.Hook == nil || !p.Hook.Stuck) {
+		p.Boosting = boosting
+	}
+}
+
+func (p *Player) HandleRotate(dir Direction) {
 	p.RotationDir = dir
 }
 

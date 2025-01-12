@@ -126,6 +126,15 @@ func (c *gameClient) handleMessage(msg messages.Message) error {
 			c.game.Players[brakedMsg.ID].Brake()
 		}
 
+	case messages.SrvMsgPlayerBoosted:
+		boostedMsg, err := messages.Unmarshal(&messages.PlayerBoostedMsg{}, msg.B)
+		if err != nil {
+			return err
+		}
+		if boostedMsg.ID != c.clientID {
+			c.game.Players[boostedMsg.ID].HandleBoost(boostedMsg.Boosting)
+		}
+
 	default:
 		return nil
 	}
