@@ -15,7 +15,6 @@ import (
 
 	"wars/lib/colors"
 	"wars/lib/game"
-	"wars/lib/messages"
 )
 
 func getColors() map[colors.RGBA]bool {
@@ -56,7 +55,6 @@ type server struct {
 }
 
 func main() {
-	msgp.RegisterExtension(98, func() msgp.Extension { return new(messages.MessageBody) })
 	msgp.RegisterExtension(99, func() msgp.Extension { return new(colors.RGBA) })
 
 	var tcpAddr, udpAddr string

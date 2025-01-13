@@ -11,7 +11,6 @@ import (
 	"wars/app/components"
 	"wars/lib/colors"
 	"wars/lib/game"
-	"wars/lib/messages"
 )
 
 const (
@@ -74,7 +73,6 @@ type gameClient struct {
 var tcpAddr, udpAddr string
 
 func main() {
-	msgp.RegisterExtension(98, func() msgp.Extension { return new(messages.MessageBody) })
 	msgp.RegisterExtension(99, func() msgp.Extension { return new(colors.RGBA) })
 
 	LoadFonts()
