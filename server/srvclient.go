@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"encoding/binary"
 	"log/slog"
 	"net"
 
@@ -21,21 +21,31 @@ type srvClient struct {
 }
 
 func (c *srvClient) sendTCP(t messages.MessageType) error {
-	msg := messages.New(t, &messages.Empty{})
-	if err := msgp.Encode(c.tcp, msg); err != nil {
-		log.Println("could not encode message", err)
+	msg := messages.Message{T: t}
+	data, err := msg.MarshalMsg(nil)
+	if err != nil {
 		return err
 	}
-	return nil
+	size := uint32(len(data))
+	buf := make([]byte, 5+size)
+	binary.BigEndian.PutUint32(buf[:5], size)
+	copy(buf[5:], data)
+	return c.sendTCPBytes(buf)
 }
 
-func (c *srvClient) sendTCPWithBody(t messages.MessageType, data msgp.Marshaler) error {
-	msg := messages.New(t, data)
-	if err := msgp.Encode(c.tcp, msg); err != nil {
-		log.Println("could not encode message", err)
+func (c *srvClient) sendTCPWithBody(t messages.MessageType, body msgp.Marshaler) error {
+	msg := messages.New(t, body)
+	data, err := msg.MarshalMsg(nil)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	size := uint32(len(data))
+	buf := make([]byte, 5+size)
+	binary.BigEndian.PutUint32(buf[:5], size)
+	copy(buf[5:], data)
+
+	return c.sendTCPBytes(buf)
 }
 
 func (c *srvClient) sendTCPBytes(b []byte) error {

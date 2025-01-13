@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/binary"
 	"errors"
+	"io"
 	"log"
 	"log/slog"
 	"net"
@@ -23,16 +25,41 @@ func (c *gameClient) openTCPConnection() {
 
 func (c *gameClient) handleTCP() {
 	for {
-		var msg messages.Message
-		if err := msgp.Decode(c.TCPConn, &msg); err != nil {
-			slog.Error("could not decode TCP message:", err.Error())
-			break
+
+		sizeBuf := make([]byte, 5)
+		_, err := io.ReadFull(c.TCPConn, sizeBuf)
+		if err != nil {
+			slog.Error("could not read TCP message header", "error", err.Error())
+			if errors.Is(err, io.EOF) {
+				slog.Info("TCP connection closed")
+				break
+			}
+			continue
 		}
 
-		err := c.handleMessage(&msg)
+		size := binary.BigEndian.Uint32(sizeBuf)
+		data := make([]byte, size)
+		_, err = io.ReadFull(c.TCPConn, data)
 		if err != nil {
-			slog.Error("could not handle TCP message", err.Error())
-			break
+			slog.Error("could not read TCP message body", "error", err.Error())
+			if errors.Is(err, io.EOF) {
+				slog.Info("TCP connection closed")
+				break
+			}
+			continue
+		}
+
+		msg := &messages.Message{}
+		_, err = msg.UnmarshalMsg(data)
+		if err != nil {
+			slog.Error("could not decode TCP message", "error", err.Error())
+			continue
+		}
+
+		err = c.handleMessage(msg)
+		if err != nil {
+			slog.Error("could not handle TCP message", "error", err.Error())
+			continue
 		}
 	}
 }
@@ -57,16 +84,17 @@ func (c *gameClient) openUDPConnection() {
 }
 
 func (c *gameClient) handleUDP() {
-	buf := make([]byte, 1024*10)
 	for {
+		buf := make([]byte, 1024*10)
 		n, err := c.UDPConn.Read(buf)
 		if err != nil {
-			slog.Error("could not read UDP message", err.Error())
+			slog.Error("could not read UDP message", "error", err.Error())
 			continue
 		}
-		msg, err := messages.Unmarshal(&messages.Message{}, buf[:n])
+		msg := &messages.Message{}
+		_, err = msg.UnmarshalMsg(buf[:n])
 		if err != nil {
-			slog.Error("could not decode UDP message", err.Error())
+			slog.Error("could not decode UDP message", "error", err.Error())
 			continue
 		}
 		if err := c.handleMessage(msg); err != nil {
