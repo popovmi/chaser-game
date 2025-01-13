@@ -144,11 +144,17 @@ func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
 		}
 	}
 	srv.game.AddPlayer(c.Player)
+	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
+		return err
+	}
+
 	for _, p := range srv.game.Players {
 		if p.ID != c.ID {
-			if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
-				return err
-			}
+			go func() {
+				if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
+					slog.Info("could not send joined player", "joinedID", c.ID, "targetID", p.ID)
+				}
+			}()
 		}
 	}
 	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {

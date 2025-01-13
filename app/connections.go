@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"io"
 	"log"
@@ -25,7 +26,6 @@ func (c *gameClient) openTCPConnection() {
 
 func (c *gameClient) handleTCP() {
 	for {
-
 		sizeBuf := make([]byte, 4)
 		_, err := io.ReadFull(c.TCPConn, sizeBuf)
 		if err != nil {
@@ -82,24 +82,62 @@ func (c *gameClient) openUDPConnection() {
 
 	go c.handleUDP()
 }
-
 func (c *gameClient) handleUDP() {
+	const maxUDPSize = 1024
+	receivedMessages := make(map[uint64][][]byte)
+	payloadsReceived := make(map[uint64]uint16)
+
 	for {
-		buf := make([]byte, 1024*10)
-		n, err := c.UDPConn.Read(buf)
+		buffer := make([]byte, maxUDPSize)
+
+		n, _, err := c.UDPConn.ReadFromUDP(buffer)
 		if err != nil {
-			slog.Error("could not read UDP message", "error", err.Error())
+			slog.Error("could not read UDP packet", "error", err.Error())
 			continue
 		}
-		msg := &messages.Message{}
-		_, err = msg.UnmarshalMsg(buf[:n])
-		if err != nil {
-			slog.Error("could not decode UDP message", "error", err.Error())
-			continue
+
+		messageID := binary.BigEndian.Uint64(buffer[0:8])
+		totalPackets := binary.BigEndian.Uint16(buffer[8:10])
+		packetIndex := binary.BigEndian.Uint16(buffer[10:12])
+
+		payload := buffer[12:n]
+
+		if _, ok := receivedMessages[messageID]; !ok {
+			receivedMessages[messageID] = make([][]byte, totalPackets)
 		}
-		if err := c.handleMessage(msg); err != nil {
-			slog.Error("could not handle UDP message", "error", err.Error())
-			continue
+
+		receivedMessages[messageID][packetIndex] = payload
+		payloadsReceived[messageID]++
+
+		if payloadsReceived[messageID] == totalPackets {
+			completeData := make([]byte, 0, totalPackets*(maxUDPSize-12))
+			fragments := receivedMessages[messageID]
+			var totalSize uint16
+			for i := uint16(0); i < totalPackets; i++ {
+				if fragments[i] == nil {
+					slog.Error("missing fragment", "messageID", messageID, "fragment", i)
+					return
+				}
+				completeData = append(completeData, fragments[i]...)
+				totalSize += uint16(len(fragments[i]))
+			}
+
+			msg := &messages.Message{}
+			_, err = msg.UnmarshalMsg(completeData[:totalSize])
+			if err != nil {
+				slog.Error("could not decode UDP message", "error", err.Error(), "messageID", messageID,
+					"completeData", hex.EncodeToString(completeData[:totalSize]), "length",
+					len(completeData[:totalSize]))
+				continue
+			}
+
+			delete(receivedMessages, messageID)
+			delete(payloadsReceived, messageID)
+
+			if err := c.handleMessage(msg); err != nil {
+				slog.Error("could not handle UDP message", "messageID", messageID, "error", err.Error())
+				continue
+			}
 		}
 	}
 }
