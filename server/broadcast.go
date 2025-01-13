@@ -25,7 +25,7 @@ func (srv *server) broadcastState() {
 		return
 	}
 
-	srv.broadcastTCP(b)
+	srv.broadcastUDP(b)
 }
 
 func (srv *server) broadcastUDP(b []byte) {

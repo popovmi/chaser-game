@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log/slog"
 	"net"
+	"sync/atomic"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -18,6 +19,8 @@ type srvClient struct {
 	tcp     net.Conn
 	udpAddr *net.UDPAddr
 	udp     *net.UDPConn
+
+	udpMsgCount atomic.Uint64
 }
 
 func (c *srvClient) sendTCP(t messages.MessageType) error {
@@ -58,10 +61,30 @@ func (c *srvClient) sendTCPBytes(b []byte) error {
 
 func (c *srvClient) sendUDPBytes(b []byte) error {
 	if c.udp != nil {
-		if _, err := c.udp.WriteToUDP(b, c.udpAddr); err != nil {
-			slog.Error("could not send UDP message", err)
-			return err
+		const maxUDPSize = 1012
+
+		messageID := c.udpMsgCount.Add(1)
+		totalPackets := uint16((len(b) + maxUDPSize - 1) / maxUDPSize)
+		for i := uint16(0); i < totalPackets; i++ {
+			header := make([]byte, 12)
+			binary.BigEndian.PutUint64(header[0:8], messageID)
+			binary.BigEndian.PutUint16(header[8:10], totalPackets)
+			binary.BigEndian.PutUint16(header[10:12], i)
+
+			start := int(i) * maxUDPSize
+			end := start + maxUDPSize
+			if end > len(b) {
+				end = len(b)
+			}
+			payload := b[start:end]
+
+			packet := append(header, payload...)
+			_, err := c.udp.WriteToUDP(packet, c.udpAddr)
+			if err != nil {
+				slog.Error("could not send udp packet", "error", err.Error())
+			}
 		}
+		return nil
 	}
 	return nil
 }
