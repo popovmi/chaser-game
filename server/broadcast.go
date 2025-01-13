@@ -40,16 +40,16 @@ func (srv *server) broadcastUDP(b []byte) {
 }
 
 func (srv *server) broadcastTCP(b []byte) {
-
 	size := uint32(len(b))
-	buf := make([]byte, 5+size)
-	binary.BigEndian.PutUint32(buf[:5], size)
-	copy(buf[5:], b)
-
+	buf := make([]byte, 4+size)
+	binary.BigEndian.PutUint32(buf[:4], size)
+	copy(buf[4:], b)
 	for _, player := range srv.game.Players {
-		err := srv.clients[player.ID].sendTCPBytes(buf)
-		if err != nil {
-			slog.Error("could not broadcast TCP packet to client", "clientID", player.ID, "error", err.Error())
-		}
+		go func() {
+			err := srv.clients[player.ID].sendTCPBytes(b)
+			if err != nil {
+				slog.Error("could not broadcast UDP packet to client", "clientID", player.ID, "error", err.Error())
+			}
+		}()
 	}
 }

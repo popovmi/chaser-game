@@ -27,9 +27,9 @@ func (c *srvClient) sendTCP(t messages.MessageType) error {
 		return err
 	}
 	size := uint32(len(data))
-	buf := make([]byte, 5+size)
-	binary.BigEndian.PutUint32(buf[:5], size)
-	copy(buf[5:], data)
+	buf := make([]byte, 4+size)
+	binary.BigEndian.PutUint32(buf[:4], size)
+	copy(buf[4:], data)
 	return c.sendTCPBytes(buf)
 }
 
@@ -41,9 +41,9 @@ func (c *srvClient) sendTCPWithBody(t messages.MessageType, body msgp.Marshaler)
 	}
 
 	size := uint32(len(data))
-	buf := make([]byte, 5+size)
-	binary.BigEndian.PutUint32(buf[:5], size)
-	copy(buf[5:], data)
+	buf := make([]byte, 4+size)
+	binary.BigEndian.PutUint32(buf[:4], size)
+	copy(buf[4:], data)
 
 	return c.sendTCPBytes(buf)
 }
