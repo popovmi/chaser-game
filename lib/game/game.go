@@ -11,8 +11,8 @@ import (
 
 type Game struct {
 	Players       map[string]*Player `msg:"players"`
-	PortalNetwork *PortalNetwork     `msg:"portalNetwork"`
-	Bricks        []*Brick           `msg:"bricks"`
+	PortalNetwork *PortalNetwork     `msg:"portal_network"`
+	Bricks        []*Brick           `msg:"bricks,allownil"`
 
 	Counter      atomic.Uint64 `msg:"-"`
 	Mu           sync.Mutex    `msg:"-"`

@@ -66,7 +66,7 @@ func (z *Game) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "portalNetwork":
+		case "portal_network":
 			if dc.IsNil() {
 				err = dc.ReadNil()
 				if err != nil {
@@ -85,33 +85,42 @@ func (z *Game) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 			}
 		case "bricks":
-			var zb0003 uint32
-			zb0003, err = dc.ReadArrayHeader()
-			if err != nil {
-				err = msgp.WrapError(err, "Bricks")
-				return
-			}
-			if cap(z.Bricks) >= int(zb0003) {
-				z.Bricks = (z.Bricks)[:zb0003]
+			if dc.IsNil() {
+				err = dc.ReadNil()
+				if err != nil {
+					err = msgp.WrapError(err, "Bricks")
+					return
+				}
+				z.Bricks = nil
 			} else {
-				z.Bricks = make([]*Brick, zb0003)
-			}
-			for za0003 := range z.Bricks {
-				if dc.IsNil() {
-					err = dc.ReadNil()
-					if err != nil {
-						err = msgp.WrapError(err, "Bricks", za0003)
-						return
-					}
-					z.Bricks[za0003] = nil
+				var zb0003 uint32
+				zb0003, err = dc.ReadArrayHeader()
+				if err != nil {
+					err = msgp.WrapError(err, "Bricks")
+					return
+				}
+				if z.Bricks != nil && cap(z.Bricks) >= int(zb0003) {
+					z.Bricks = (z.Bricks)[:zb0003]
 				} else {
-					if z.Bricks[za0003] == nil {
-						z.Bricks[za0003] = new(Brick)
-					}
-					err = z.Bricks[za0003].DecodeMsg(dc)
-					if err != nil {
-						err = msgp.WrapError(err, "Bricks", za0003)
-						return
+					z.Bricks = make([]*Brick, zb0003)
+				}
+				for za0003 := range z.Bricks {
+					if dc.IsNil() {
+						err = dc.ReadNil()
+						if err != nil {
+							err = msgp.WrapError(err, "Bricks", za0003)
+							return
+						}
+						z.Bricks[za0003] = nil
+					} else {
+						if z.Bricks[za0003] == nil {
+							z.Bricks[za0003] = new(Brick)
+						}
+						err = z.Bricks[za0003].DecodeMsg(dc)
+						if err != nil {
+							err = msgp.WrapError(err, "Bricks", za0003)
+							return
+						}
 					}
 				}
 			}
@@ -158,8 +167,8 @@ func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
 			}
 		}
 	}
-	// write "portalNetwork"
-	err = en.Append(0xad, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
+	// write "portal_network"
+	err = en.Append(0xae, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
 	if err != nil {
 		return
 	}
@@ -180,22 +189,29 @@ func (z *Game) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteArrayHeader(uint32(len(z.Bricks)))
-	if err != nil {
-		err = msgp.WrapError(err, "Bricks")
-		return
-	}
-	for za0003 := range z.Bricks {
-		if z.Bricks[za0003] == nil {
-			err = en.WriteNil()
-			if err != nil {
-				return
-			}
-		} else {
-			err = z.Bricks[za0003].EncodeMsg(en)
-			if err != nil {
-				err = msgp.WrapError(err, "Bricks", za0003)
-				return
+	if z.Bricks == nil { // allownil: if nil
+		err = en.WriteNil()
+		if err != nil {
+			return
+		}
+	} else {
+		err = en.WriteArrayHeader(uint32(len(z.Bricks)))
+		if err != nil {
+			err = msgp.WrapError(err, "Bricks")
+			return
+		}
+		for za0003 := range z.Bricks {
+			if z.Bricks[za0003] == nil {
+				err = en.WriteNil()
+				if err != nil {
+					return
+				}
+			} else {
+				err = z.Bricks[za0003].EncodeMsg(en)
+				if err != nil {
+					err = msgp.WrapError(err, "Bricks", za0003)
+					return
+				}
 			}
 		}
 	}
@@ -221,8 +237,8 @@ func (z *Game) MarshalMsg(b []byte) (o []byte, err error) {
 			}
 		}
 	}
-	// string "portalNetwork"
-	o = append(o, 0xad, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
+	// string "portal_network"
+	o = append(o, 0xae, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x5f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b)
 	if z.PortalNetwork == nil {
 		o = msgp.AppendNil(o)
 	} else {
@@ -234,15 +250,19 @@ func (z *Game) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "bricks"
 	o = append(o, 0xa6, 0x62, 0x72, 0x69, 0x63, 0x6b, 0x73)
-	o = msgp.AppendArrayHeader(o, uint32(len(z.Bricks)))
-	for za0003 := range z.Bricks {
-		if z.Bricks[za0003] == nil {
-			o = msgp.AppendNil(o)
-		} else {
-			o, err = z.Bricks[za0003].MarshalMsg(o)
-			if err != nil {
-				err = msgp.WrapError(err, "Bricks", za0003)
-				return
+	if z.Bricks == nil { // allownil: if nil
+		o = msgp.AppendNil(o)
+	} else {
+		o = msgp.AppendArrayHeader(o, uint32(len(z.Bricks)))
+		for za0003 := range z.Bricks {
+			if z.Bricks[za0003] == nil {
+				o = msgp.AppendNil(o)
+			} else {
+				o, err = z.Bricks[za0003].MarshalMsg(o)
+				if err != nil {
+					err = msgp.WrapError(err, "Bricks", za0003)
+					return
+				}
 			}
 		}
 	}
@@ -308,7 +328,7 @@ func (z *Game) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				z.Players[za0001] = za0002
 			}
-		case "portalNetwork":
+		case "portal_network":
 			if msgp.IsNil(bts) {
 				bts, err = msgp.ReadNilBytes(bts)
 				if err != nil {
@@ -326,32 +346,37 @@ func (z *Game) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 			}
 		case "bricks":
-			var zb0003 uint32
-			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Bricks")
-				return
-			}
-			if cap(z.Bricks) >= int(zb0003) {
-				z.Bricks = (z.Bricks)[:zb0003]
+			if msgp.IsNil(bts) {
+				bts = bts[1:]
+				z.Bricks = nil
 			} else {
-				z.Bricks = make([]*Brick, zb0003)
-			}
-			for za0003 := range z.Bricks {
-				if msgp.IsNil(bts) {
-					bts, err = msgp.ReadNilBytes(bts)
-					if err != nil {
-						return
-					}
-					z.Bricks[za0003] = nil
+				var zb0003 uint32
+				zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Bricks")
+					return
+				}
+				if z.Bricks != nil && cap(z.Bricks) >= int(zb0003) {
+					z.Bricks = (z.Bricks)[:zb0003]
 				} else {
-					if z.Bricks[za0003] == nil {
-						z.Bricks[za0003] = new(Brick)
-					}
-					bts, err = z.Bricks[za0003].UnmarshalMsg(bts)
-					if err != nil {
-						err = msgp.WrapError(err, "Bricks", za0003)
-						return
+					z.Bricks = make([]*Brick, zb0003)
+				}
+				for za0003 := range z.Bricks {
+					if msgp.IsNil(bts) {
+						bts, err = msgp.ReadNilBytes(bts)
+						if err != nil {
+							return
+						}
+						z.Bricks[za0003] = nil
+					} else {
+						if z.Bricks[za0003] == nil {
+							z.Bricks[za0003] = new(Brick)
+						}
+						bts, err = z.Bricks[za0003].UnmarshalMsg(bts)
+						if err != nil {
+							err = msgp.WrapError(err, "Bricks", za0003)
+							return
+						}
 					}
 				}
 			}
@@ -381,7 +406,7 @@ func (z *Game) Msgsize() (s int) {
 			}
 		}
 	}
-	s += 14
+	s += 15
 	if z.PortalNetwork == nil {
 		s += msgp.NilSize
 	} else {

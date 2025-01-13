@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
+	"wars/lib/colors"
 	"wars/lib/game"
 )
 
@@ -61,7 +62,7 @@ var (
 	portal9Bytes  []byte
 	portalSprites = make([]*ebiten.Image, 0)
 
-	//go:embed assets/Player100x100.png
+	//go:embed assets/astronaut_01_60x60.png
 	astroBytes []byte
 )
 
@@ -87,13 +88,15 @@ func (c *gameClient) createDefaultImages() {
 		}
 		worldImg := ebiten.NewImage(game.FieldWidth, game.FieldHeight)
 		bgW, bgH := background.Bounds().Dx(), background.Bounds().Dy()
-		for i := range 2 {
-			for j := range 2 {
+		tileCount := 4
+		tileW, tileH := float64(game.FieldWidth/tileCount), float64(game.FieldHeight/tileCount)
+		for i := range tileCount {
+			for j := range tileCount {
 				fi := float64(i)
 				fj := float64(j)
 				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Scale(float64(game.FieldWidth/2)/float64(bgW), float64(game.FieldHeight/2)/float64(bgH))
-				op.GeoM.Translate(fi*float64(game.FieldWidth)/2, fj*float64(game.FieldHeight)/2)
+				op.GeoM.Scale(tileW/float64(bgW), tileH/float64(bgH))
+				op.GeoM.Translate(tileW*fi, tileH*fj)
 				op.ColorScale.ScaleAlpha(0.35)
 				worldImg.DrawImage(background, op)
 			}
@@ -193,14 +196,15 @@ func (c *gameClient) createPlayerImages(p *game.Player) {
 	animation := &Animation{Frames: playerSprites, AnimationSpeed: 0.125, img: playerSprites[0]}
 
 	hookImg := ebiten.NewImage(game.MaxHookLength, 5)
-	vector.StrokeLine(
-		hookImg,
-		0, 0,
-		game.MaxHookLength, 5,
-		5,
-		p.Color.ToColorRGBA(),
-		true,
-	)
+	c.createChain(hookImg, p.Color)
+	//vector.StrokeLine(
+	//	hookImg,
+	//	0, 0,
+	//	game.MaxHookLength, 5,
+	//	5,
+	//	p.Color.ToColorRGBA(),
+	//	true,
+	//)
 
 	astroImg := ebiten.NewImage(w, h)
 	astroOp := &ebiten.DrawImageOptions{}
@@ -224,5 +228,18 @@ func (c *gameClient) createPortalsAnimations() {
 	for _, portal := range c.game.PortalNetwork.Portals {
 		c.portalAnimations[portal.ID] =
 			&Animation{Frames: portalSprites, AnimationSpeed: 0.6, img: portalSprites[0], Reversed: true}
+	}
+}
+
+func (c *gameClient) createChain(screen *ebiten.Image, color colors.RGBA) {
+
+	linkRadius := 2.0
+	linkDistance := 3.0 + linkRadius*2
+
+	for x := 0.0; x < float64(screen.Bounds().Dx()); x += linkDistance {
+		angle := x * math.Pi / 2
+		y := float64(screen.Bounds().Dy()/2) + linkRadius*math.Sin(angle)
+
+		vector.StrokeCircle(screen, float32(x), float32(y), float32(linkRadius), 1, color.ToColorRGBA(), true)
 	}
 }

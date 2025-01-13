@@ -2,9 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
-	"strconv"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -13,7 +13,8 @@ import (
 )
 
 func (srv *server) handleUDPData(addr *net.UDPAddr, data []byte, n int) error {
-	msg, err := messages.Unmarshal(&messages.ClientUDPMessage{}, data[:n])
+	msg := &messages.ClientUDPMessage{}
+	_, err := msg.UnmarshalMsg(data[:n])
 	if err != nil {
 		slog.Error("could not decode UDP data", err)
 		return err
@@ -44,8 +45,9 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 		return
 	}
 
-	id := srv.game.Counter.Add(1)
-	c := &srvClient{Player: game.NewPlayer(strconv.FormatUint(id, 10)), ip: host, tcp: conn}
+	num := srv.game.Counter.Add(1)
+	id := fmt.Sprintf("p%d", num)
+	c := &srvClient{Player: game.NewPlayer(id), ip: host, tcp: conn}
 	srv.clients[c.ID] = c
 
 	defer func() {
@@ -63,141 +65,178 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 	for {
 		var msg messages.Message
 		if err := msgp.Decode(c.tcp, &msg); err != nil {
-			slog.Error("could not decode TCP message", err.Error())
+			slog.Error("could not decode TCP message", "error", err.Error())
 			return
 		}
 
 		err := srv.handleMessage(c, msg)
 		if err != nil {
+			slog.Error("could not handle TCP message", "error", err.Error())
 			return
 		}
 	}
 }
 
 func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
+	var clMsg msgp.Unmarshaler
 	switch msg.T {
-
 	case messages.ClMsgHello:
 		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
-
+		return nil
 	case messages.ClMsgJoinGame:
-		joinReq, err := messages.Unmarshal(&messages.JoinGameMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-
-		slog.Info(
-			"new join request",
-			"ID", c.ID,
-			"IP", c.ip,
-			"name", joinReq.Name,
-		)
-
-		c.Name = joinReq.Name
-		for clrKey, picked := range srv.colors {
-			if !picked {
-				srv.colors[clrKey] = true
-				c.Color = clrKey
-				break
-			}
-		}
-		srv.game.AddPlayer(c.Player)
-		if err = c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
-			return err
-		}
-		for _, p := range srv.game.Players {
-			if p.ID != c.ID {
-				if err = srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
-					return err
-				}
-			}
-		}
-
+		clMsg = &messages.JoinGameMsg{}
 	case messages.ClMsgMove:
-		moveReq, err := messages.Unmarshal(&messages.MoveMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		c.HandleMove(moveReq.Dir)
-		movedMsg := &messages.PlayerMovedMsg{ID: c.ID, Dir: moveReq.Dir}
-		b, err := messages.New(messages.SrvMsgPlayerMoved, movedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", movedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
+		clMsg = &messages.MoveMsg{}
 	case messages.ClMsgRotate:
-		rotateReq, err := messages.Unmarshal(&messages.RotateMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		c.HandleRotate(rotateReq.Dir)
-		rotatedMsg := &messages.PlayerRotatedMsg{ID: c.ID, Dir: rotateReq.Dir}
-		b, err := messages.New(messages.SrvMsgPlayerRotated, rotatedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", rotatedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
-	case messages.ClMsgTeleport:
-		srv.game.PortalNetwork.Teleport(srv.game.Players[c.ID])
-		portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerTeleported, portedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", portedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
-	case messages.ClMsgBlink:
-		c.HandleBlink()
-		blinkedMsg := &messages.PlayerBlinkedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerBlinked, blinkedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", blinkedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
-	case messages.ClMsgHook:
-		c.UseHook()
-		hookedMsg := &messages.PlayerHookedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerHooked, hookedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", hookedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
-	case messages.ClMsgBrake:
-		c.Brake()
-		brakedMsg := &messages.PlayerBrakedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerBraked, brakedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", brakedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
-
+		clMsg = &messages.RotateMsg{}
 	case messages.ClMsgBoost:
-		boostReq, err := messages.Unmarshal(&messages.BoostMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		c.HandleBoost(boostReq.Boosting)
-		boostedMsg := &messages.PlayerBoostedMsg{ID: c.ID, Boosting: boostReq.Boosting}
-		b, err := messages.New(messages.SrvMsgPlayerBoosted, boostedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", boostedMsg)
-			return err
-		}
-		srv.broadcastUDP(b)
+		clMsg = &messages.BoostMsg{}
+	default:
+		clMsg = nil
+	}
 
+	if clMsg != nil {
+		_, err := clMsg.UnmarshalMsg(msg.B)
+		if err != nil {
+			return err
+		}
+	}
+
+	switch msg.T {
+	case messages.ClMsgHello:
+		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
+	case messages.ClMsgJoinGame:
+		return srv.join(c, clMsg.(*messages.JoinGameMsg))
+	case messages.ClMsgMove:
+		return srv.move(c, clMsg.(*messages.MoveMsg))
+	case messages.ClMsgRotate:
+		return srv.rotate(c, clMsg.(*messages.RotateMsg))
+	case messages.ClMsgTeleport:
+		return srv.teleport(c)
+	case messages.ClMsgBlink:
+		return srv.blink(c)
+	case messages.ClMsgHook:
+		return srv.hook(c)
+	case messages.ClMsgBrake:
+		return srv.brake(c)
+	case messages.ClMsgBoost:
+		return srv.boost(c, clMsg.(*messages.BoostMsg))
 	default:
 		return nil
 	}
 
+	return nil
+}
+
+func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
+	slog.Info(
+		"new join request",
+		"ID", c.ID,
+		"IP", c.ip,
+		"name", msg.Name,
+	)
+	c.Name = msg.Name
+	for clrKey, picked := range srv.colors {
+		if !picked {
+			srv.colors[clrKey] = true
+			c.Color = clrKey
+			break
+		}
+	}
+	srv.game.AddPlayer(c.Player)
+	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
+		return err
+	}
+	for _, p := range srv.game.Players {
+		if p.ID != c.ID {
+			if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (srv *server) move(c *srvClient, msg *messages.MoveMsg) error {
+	c.HandleMove(msg.Dir)
+	movedMsg := &messages.PlayerMovedMsg{ID: c.ID, Dir: msg.Dir}
+	b, err := messages.New(messages.SrvMsgPlayerMoved, movedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", movedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) rotate(c *srvClient, msg *messages.RotateMsg) error {
+	c.HandleRotate(msg.Dir)
+	rotatedMsg := &messages.PlayerRotatedMsg{ID: c.ID, Dir: msg.Dir}
+	b, err := messages.New(messages.SrvMsgPlayerRotated, rotatedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", rotatedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) teleport(c *srvClient) error {
+	srv.game.PortalNetwork.Teleport(srv.game.Players[c.ID])
+	portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
+	b, err := messages.New(messages.SrvMsgPlayerTeleported, portedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", portedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) blink(c *srvClient) error {
+	c.HandleBlink()
+	blinkedMsg := &messages.PlayerBlinkedMsg{ID: c.ID}
+	b, err := messages.New(messages.SrvMsgPlayerBlinked, blinkedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", blinkedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) hook(c *srvClient) error {
+	c.UseHook()
+	hookedMsg := &messages.PlayerHookedMsg{ID: c.ID}
+	b, err := messages.New(messages.SrvMsgPlayerHooked, hookedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", hookedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) brake(c *srvClient) error {
+	c.Brake()
+	brakedMsg := &messages.PlayerBrakedMsg{ID: c.ID}
+	b, err := messages.New(messages.SrvMsgPlayerBraked, brakedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", brakedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
+	return nil
+}
+
+func (srv *server) boost(c *srvClient, msg *messages.BoostMsg) error {
+	c.HandleBoost(msg.Boosting)
+	boostedMsg := &messages.PlayerBoostedMsg{ID: c.ID, Boosting: msg.Boosting}
+	b, err := messages.New(messages.SrvMsgPlayerBoosted, boostedMsg).MarshalMsg(nil)
+	if err != nil {
+		slog.Error("could not encode message", "error", err.Error(), "msg", boostedMsg)
+		return err
+	}
+	srv.broadcastTCP(b)
 	return nil
 }

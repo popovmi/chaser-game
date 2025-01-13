@@ -4,140 +4,166 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/tinylib/msgp/msgp"
+
 	"wars/lib/game"
 	"wars/lib/messages"
 )
 
-func (c *gameClient) handleMessage(msg messages.Message) error {
+type handler func(msg msgp.Unmarshaler)
+
+func (c *gameClient) handleMessage(msg *messages.Message) error {
+	var srvMsg msgp.Unmarshaler
 	switch msg.T {
 	case messages.SrvMsgYourID:
-		userIdMsg, err := messages.Unmarshal(&messages.YourIDMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-
-		slog.Info("received user id", "ID", userIdMsg.ID)
-
-		c.clientID = userIdMsg.ID
-		c.screen = screenMain
-
+		srvMsg = &messages.YourIDMsg{}
 	case messages.SrvMsgYouJoined:
-		state, err := messages.Unmarshal(&game.Game{}, msg.B)
-		if err != nil {
-			return err
-		}
-		c.game = state
-		for _, player := range c.game.Players {
-			c.createPlayerImages(player)
-		}
-		c.drawBricks()
-		c.createPortalsAnimations()
-		c.openUDPConnection()
-		c.screen = screenGame
-
+		srvMsg = &game.Game{}
 	case messages.SrvMsgPlayerJoined:
-		player, err := messages.Unmarshal(&game.Player{}, msg.B)
-		if err != nil {
-			return err
-		}
-		c.game.Players[player.ID] = player
-		c.createPlayerImages(player)
-
+		srvMsg = &game.Player{}
 	case messages.SrvMsgGameState:
-		state, err := messages.Unmarshal(&messages.GameStateMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		for k, player := range c.game.Players {
-			if updatedPlayer, ok := state.Game.Players[k]; ok {
-				*player = *updatedPlayer
-				delete(state.Game.Players, k)
-			} else {
-				delete(c.game.Players, k)
-				delete(c.playerImages, k)
-			}
-		}
-		for k, player := range state.Game.Players {
-			c.game.Players[k] = player
-			c.createPlayerImages(player)
-		}
-		for k, link := range state.Game.PortalNetwork.Links {
-			c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
-		}
-		for k, portal := range state.Game.PortalNetwork.Portals {
-			*c.game.PortalNetwork.Portals[k] = *portal
-		}
-		c.game.PreviousTick = time.Now().UnixMilli()
-		c.moveCamera()
-
+		srvMsg = &messages.GameStateMsg{}
 	case messages.SrvMsgPlayerMoved:
-		movedMsg, err := messages.Unmarshal(&messages.PlayerMovedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if movedMsg.ID != c.clientID {
-			c.game.Players[movedMsg.ID].HandleMove(movedMsg.Dir)
-		}
-
+		srvMsg = &messages.PlayerMovedMsg{}
 	case messages.SrvMsgPlayerRotated:
-		rotatedMsg, err := messages.Unmarshal(&messages.PlayerRotatedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if rotatedMsg.ID != c.clientID {
-			c.game.Players[rotatedMsg.ID].HandleRotate(rotatedMsg.Dir)
-		}
-
+		srvMsg = &messages.PlayerRotatedMsg{}
 	case messages.SrvMsgPlayerTeleported:
-		portedMsg, err := messages.Unmarshal(&messages.PlayerTeleportedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if portedMsg.ID != c.clientID {
-			if c.game.PortalNetwork.Teleport(c.game.Players[portedMsg.ID]) {
-				c.audio.playPortal()
-			}
-		}
-
+		srvMsg = &messages.PlayerTeleportedMsg{}
 	case messages.SrvMsgPlayerBlinked:
-		blinkedMsg, err := messages.Unmarshal(&messages.PlayerBlinkedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if blinkedMsg.ID != c.clientID {
-			c.game.Players[blinkedMsg.ID].HandleBlink()
-		}
-
+		srvMsg = &messages.PlayerBlinkedMsg{}
 	case messages.SrvMsgPlayerHooked:
-		hookedMsg, err := messages.Unmarshal(&messages.PlayerHookedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if hookedMsg.ID != c.clientID {
-			c.game.Players[hookedMsg.ID].UseHook()
-		}
-
+		srvMsg = &messages.PlayerHookedMsg{}
 	case messages.SrvMsgPlayerBraked:
-		brakedMsg, err := messages.Unmarshal(&messages.PlayerBrakedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if brakedMsg.ID != c.clientID {
-			c.game.Players[brakedMsg.ID].Brake()
-		}
-
+		srvMsg = &messages.PlayerBrakedMsg{}
 	case messages.SrvMsgPlayerBoosted:
-		boostedMsg, err := messages.Unmarshal(&messages.PlayerBoostedMsg{}, msg.B)
-		if err != nil {
-			return err
-		}
-		if boostedMsg.ID != c.clientID {
-			c.game.Players[boostedMsg.ID].HandleBoost(boostedMsg.Boosting)
-		}
-
-	default:
-		return nil
+		srvMsg = &messages.PlayerBoostedMsg{}
 	}
 
+	if srvMsg != nil {
+		_, err := srvMsg.UnmarshalMsg(msg.B)
+		if err != nil {
+			return err
+		}
+	}
+
+	map[messages.MessageType]handler{
+		messages.SrvMsgYourID:           c.handleYourId,
+		messages.SrvMsgYouJoined:        c.handleYouJoined,
+		messages.SrvMsgPlayerJoined:     c.handlePlayerJoined,
+		messages.SrvMsgGameState:        c.handleGameState,
+		messages.SrvMsgPlayerMoved:      c.handlePlayerMoved,
+		messages.SrvMsgPlayerRotated:    c.handlePlayerRotated,
+		messages.SrvMsgPlayerTeleported: c.handlePlayerTeleported,
+		messages.SrvMsgPlayerBlinked:    c.handlePlayerBlinked,
+		messages.SrvMsgPlayerHooked:     c.handlePlayerHooked,
+		messages.SrvMsgPlayerBraked:     c.handlePlayerBraked,
+		messages.SrvMsgPlayerBoosted:    c.handlePlayerBoosted,
+	}[msg.T](srvMsg)
+
 	return nil
+}
+
+func (c *gameClient) handleYourId(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.YourIDMsg)
+	slog.Info("received user id", "ID", msg.ID)
+	c.clientID = msg.ID
+	c.screen = screenMain
+}
+
+func (c *gameClient) handleYouJoined(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*game.Game)
+	c.game = msg
+	for _, player := range c.game.Players {
+		c.createPlayerImages(player)
+	}
+	c.drawBricks()
+	c.createPortalsAnimations()
+	c.openUDPConnection()
+	c.screen = screenGame
+}
+
+func (c *gameClient) handlePlayerJoined(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*game.Player)
+	c.createPlayerImages(msg)
+	c.game.Players[msg.ID] = msg
+}
+
+func (c *gameClient) handleGameState(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.GameStateMsg)
+	if c.game == nil {
+		return
+	}
+	for k, player := range c.game.Players {
+		if updatedPlayer, ok := msg.Game.Players[k]; ok {
+			*player = *updatedPlayer
+			delete(msg.Game.Players, k)
+		} else {
+			delete(c.game.Players, k)
+			delete(c.playerImages, k)
+		}
+	}
+	for k, player := range msg.Game.Players {
+		c.game.Players[k] = player
+		c.createPlayerImages(player)
+	}
+	for k, link := range msg.Game.PortalNetwork.Links {
+		c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
+	}
+	for k, portal := range msg.Game.PortalNetwork.Portals {
+		*c.game.PortalNetwork.Portals[k] = *portal
+	}
+	c.game.PreviousTick = time.Now().UnixMilli()
+	c.moveCamera()
+}
+
+func (c *gameClient) handlePlayerMoved(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerMovedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].HandleMove(msg.Dir)
+	}
+}
+
+func (c *gameClient) handlePlayerRotated(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerRotatedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].HandleRotate(msg.Dir)
+	}
+}
+
+func (c *gameClient) handlePlayerTeleported(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerTeleportedMsg)
+	if msg.ID != c.clientID {
+		if c.game.PortalNetwork.Teleport(c.game.Players[msg.ID]) {
+			c.audio.playPortal()
+		}
+	}
+}
+
+func (c *gameClient) handlePlayerBlinked(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerBlinkedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].HandleBlink()
+	}
+
+}
+
+func (c *gameClient) handlePlayerHooked(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerHookedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].UseHook()
+	}
+}
+
+func (c *gameClient) handlePlayerBraked(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerBrakedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].Brake()
+	}
+}
+
+func (c *gameClient) handlePlayerBoosted(srvMsg msgp.Unmarshaler) {
+	msg := srvMsg.(*messages.PlayerBoostedMsg)
+	if msg.ID != c.clientID {
+		c.game.Players[msg.ID].HandleBoost(msg.Boosting)
+	}
 }

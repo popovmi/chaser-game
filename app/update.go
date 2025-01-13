@@ -96,6 +96,7 @@ func (c *gameClient) updateGameScreen() error {
 		} else {
 			delete(c.untouchableTimers, p.ID)
 		}
+		//if animaion, ok :=
 		c.playerImages[p.ID].animation.Update()
 		if p.Teleporting {
 			animatePortalIds = append(animatePortalIds, p.DepPortalID, p.ArrPortalID)

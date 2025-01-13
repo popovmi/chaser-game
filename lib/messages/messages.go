@@ -38,7 +38,7 @@ const (
 
 type Message struct {
 	T MessageType `msg:"type"`
-	B MessageBody `msg:"body"`
+	B msgp.Raw    `msg:"body"`
 }
 
 type ClientUDPMessage struct {
@@ -115,12 +115,4 @@ type PlayerBoostedMsg struct {
 
 type GameStateMsg struct {
 	Game *game.Game `msg:"g"`
-}
-
-func Unmarshal[T msgp.Unmarshaler](msg T, b []byte) (T, error) {
-	_, err := msg.UnmarshalMsg(b)
-	if err != nil {
-		return msg, err
-	}
-	return msg, nil
 }
