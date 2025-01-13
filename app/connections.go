@@ -25,8 +25,7 @@ func (c *gameClient) openTCPConnection() {
 
 func (c *gameClient) handleTCP() {
 	for {
-
-		sizeBuf := make([]byte, 5)
+		sizeBuf := make([]byte, 4)
 		_, err := io.ReadFull(c.TCPConn, sizeBuf)
 		if err != nil {
 			slog.Error("could not read TCP message header", "error", err.Error())
