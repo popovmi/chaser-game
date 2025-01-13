@@ -44,11 +44,12 @@ func (srv *server) broadcastTCP(b []byte) {
 	buf := make([]byte, 4+size)
 	binary.BigEndian.PutUint32(buf[:4], size)
 	copy(buf[4:], b)
+
 	for _, player := range srv.game.Players {
 		go func() {
-			err := srv.clients[player.ID].sendTCPBytes(b)
+			err := srv.clients[player.ID].sendTCPBytes(buf)
 			if err != nil {
-				slog.Error("could not broadcast UDP packet to client", "clientID", player.ID, "error", err.Error())
+				slog.Error("could not broadcast TCP packet to client", "clientID", player.ID, "error", err.Error())
 			}
 		}()
 	}

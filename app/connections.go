@@ -25,7 +25,6 @@ func (c *gameClient) openTCPConnection() {
 
 func (c *gameClient) handleTCP() {
 	for {
-
 		sizeBuf := make([]byte, 4)
 		_, err := io.ReadFull(c.TCPConn, sizeBuf)
 		if err != nil {
