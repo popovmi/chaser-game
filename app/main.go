@@ -100,6 +100,7 @@ func main() {
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetFullscreen(true)
+	ebiten.SetTPS(60)
 	if err := ebiten.RunGame(c); err != nil {
 		log.Fatal(err)
 	}

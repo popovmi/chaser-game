@@ -122,7 +122,7 @@ func (c *gameClient) rotate(dir game.Direction) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.RotationDir {
 		go func() {
-			err := c.sendTCPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
+			err := c.sendUDPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
 			if err != nil {
 				slog.Error("could not send move", "error", err.Error())
 			}
@@ -135,7 +135,7 @@ func (c *gameClient) move(dir string) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.MoveDir {
 		go func() {
-			err := c.sendTCPWithBody(messages.ClMsgMove, &messages.MoveMsg{Dir: dir})
+			err := c.sendUDPWithBody(messages.ClMsgMove, &messages.MoveMsg{Dir: dir})
 			if err != nil {
 				slog.Error("could not send move", "error", err.Error())
 			}
@@ -148,7 +148,7 @@ func (c *gameClient) teleport() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
 		go func() {
-			err := c.sendTCP(messages.ClMsgTeleport)
+			err := c.sendUDP(messages.ClMsgTeleport)
 			if err != nil {
 				slog.Error("could not send teleport", "error", err.Error())
 			}
@@ -163,7 +163,7 @@ func (c *gameClient) blink() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
 		go func() {
-			err := c.sendTCP(messages.ClMsgBlink)
+			err := c.sendUDP(messages.ClMsgBlink)
 			if err != nil {
 				slog.Error("could not send teleport", "error", err.Error())
 			}
@@ -177,7 +177,7 @@ func (c *gameClient) hook() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
 		go func() {
-			err := c.sendTCP(messages.ClMsgHook)
+			err := c.sendUDP(messages.ClMsgHook)
 			if err != nil {
 				slog.Error("could not send hook", "error", err.Error())
 			}
@@ -190,7 +190,7 @@ func (c *gameClient) brake() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
 		go func() {
-			err := c.sendTCP(messages.ClMsgBrake)
+			err := c.sendUDP(messages.ClMsgBrake)
 			if err != nil {
 				slog.Error("could not send brake", "error", err.Error())
 			}
@@ -203,7 +203,7 @@ func (c *gameClient) boost(boosting bool) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && p.Boosting != boosting {
 		go func() {
-			err := c.sendTCPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
+			err := c.sendUDPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
 			if err != nil {
 				slog.Error("could not send brake", "error", err.Error())
 			}

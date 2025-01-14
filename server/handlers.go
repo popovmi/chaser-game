@@ -13,7 +13,7 @@ import (
 )
 
 func (srv *server) handleUDPData(addr *net.UDPAddr, data []byte, n int) error {
-	msg := &messages.ClientUDPMessage{}
+	msg := &messages.ClientMessage{}
 	_, err := msg.UnmarshalMsg(data[:n])
 	if err != nil {
 		slog.Error("could not decode UDP data", err)
@@ -79,23 +79,50 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 
 func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 	var clMsg msgp.Unmarshaler
+	needsUnmarshal := false
+	needsBroadcast := true
 	switch msg.T {
 	case messages.ClMsgHello:
 		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
 		return nil
+
 	case messages.ClMsgJoinGame:
 		clMsg = &messages.JoinGameMsg{}
+		needsUnmarshal = true
+		needsBroadcast = false
+
 	case messages.ClMsgMove:
 		clMsg = &messages.MoveMsg{}
+		needsUnmarshal = true
+
 	case messages.ClMsgRotate:
 		clMsg = &messages.RotateMsg{}
+		needsUnmarshal = true
+
 	case messages.ClMsgBoost:
 		clMsg = &messages.BoostMsg{}
+		needsUnmarshal = true
+
+	case messages.ClMsgTeleport, messages.ClMsgBlink, messages.ClMsgHook, messages.ClMsgBrake:
+		// Эти виды сообщений не нужны для распаковки
+		break
+
 	default:
-		clMsg = nil
+		return nil
 	}
 
-	if clMsg != nil {
+	if needsBroadcast {
+		go func() {
+			broadcastMsg := messages.New(msg.T, &messages.ClientMessage{ID: c.ID, Message: msg})
+			b, err := broadcastMsg.MarshalMsg(nil)
+			if err != nil {
+				slog.Error("could not encode message", "error", err.Error(), "msg", broadcastMsg)
+			}
+			srv.broadcastUDP(b)
+		}()
+	}
+
+	if needsUnmarshal {
 		_, err := clMsg.UnmarshalMsg(msg.B)
 		if err != nil {
 			return err
@@ -117,10 +144,10 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		return srv.blink(c)
 	case messages.ClMsgHook:
 		return srv.hook(c)
-	case messages.ClMsgBrake:
-		return srv.brake(c)
 	case messages.ClMsgBoost:
 		return srv.boost(c, clMsg.(*messages.BoostMsg))
+	case messages.ClMsgBrake:
+		return srv.brake(c)
 	default:
 		return nil
 	}
@@ -147,7 +174,6 @@ func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
 	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
 		return err
 	}
-
 	for _, p := range srv.game.Players {
 		if p.ID != c.ID {
 			go func() {
@@ -157,99 +183,40 @@ func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
 			}()
 		}
 	}
-	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
-		return err
-	}
 	return nil
 }
 
 func (srv *server) move(c *srvClient, msg *messages.MoveMsg) error {
-	go func() {
-		movedMsg := &messages.PlayerMovedMsg{ID: c.ID, Dir: msg.Dir}
-		b, err := messages.New(messages.SrvMsgPlayerMoved, movedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", movedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.HandleMove(msg.Dir)
 	return nil
 }
 
 func (srv *server) rotate(c *srvClient, msg *messages.RotateMsg) error {
-	go func() {
-		rotatedMsg := &messages.PlayerRotatedMsg{ID: c.ID, Dir: msg.Dir}
-		b, err := messages.New(messages.SrvMsgPlayerRotated, rotatedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", rotatedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.HandleRotate(msg.Dir)
 	return nil
 }
 
 func (srv *server) teleport(c *srvClient) error {
-	go func() {
-		portedMsg := &messages.PlayerTeleportedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerTeleported, portedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", portedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	srv.game.PortalNetwork.Teleport(srv.game.Players[c.ID])
 	return nil
 }
 
 func (srv *server) blink(c *srvClient) error {
-	go func() {
-		blinkedMsg := &messages.PlayerBlinkedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerBlinked, blinkedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", blinkedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.HandleBlink()
 	return nil
 }
 
 func (srv *server) hook(c *srvClient) error {
-	go func() {
-		hookedMsg := &messages.PlayerHookedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerHooked, hookedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", hookedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.UseHook()
 	return nil
 }
 
 func (srv *server) brake(c *srvClient) error {
-	go func() {
-		brakedMsg := &messages.PlayerBrakedMsg{ID: c.ID}
-		b, err := messages.New(messages.SrvMsgPlayerBraked, brakedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", brakedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.Brake()
 	return nil
 }
 
 func (srv *server) boost(c *srvClient, msg *messages.BoostMsg) error {
-	go func() {
-		boostedMsg := &messages.PlayerBoostedMsg{ID: c.ID, Boosting: msg.Boosting}
-		b, err := messages.New(messages.SrvMsgPlayerBoosted, boostedMsg).MarshalMsg(nil)
-		if err != nil {
-			slog.Error("could not encode message", "error", err.Error(), "msg", boostedMsg)
-		}
-		srv.broadcastTCP(b)
-	}()
 	c.HandleBoost(msg.Boosting)
 	return nil
 }

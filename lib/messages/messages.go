@@ -11,7 +11,12 @@ import (
 type MessageType int
 
 const (
-	ClMsgHello MessageType = iota
+	SrvMsgYourID MessageType = iota
+	SrvMsgYouJoined
+	SrvMsgPlayerJoined
+	SrvMsgGameState
+
+	ClMsgHello
 	ClMsgJoinGame
 	ClMsgMove
 	ClMsgRotate
@@ -22,28 +27,14 @@ const (
 	ClMsgBoost
 )
 
-const (
-	SrvMsgYourID MessageType = iota
-	SrvMsgYouJoined
-	SrvMsgPlayerJoined
-	SrvMsgGameState
-	SrvMsgPlayerMoved
-	SrvMsgPlayerRotated
-	SrvMsgPlayerBraked
-	SrvMsgPlayerTeleported
-	SrvMsgPlayerBlinked
-	SrvMsgPlayerHooked
-	SrvMsgPlayerBoosted
-)
-
 type Message struct {
 	T MessageType `msg:"type"`
 	B msgp.Raw    `msg:"body"`
 }
 
-type ClientUDPMessage struct {
-	Message
+type ClientMessage struct {
 	ID string `msg:"id"`
+	Message
 }
 
 func New(t MessageType, data msgp.Marshaler) *Message {
@@ -54,9 +45,9 @@ func New(t MessageType, data msgp.Marshaler) *Message {
 	return &Message{T: t, B: body}
 }
 
-func UDP(t MessageType, id string, data msgp.Marshaler) *ClientUDPMessage {
+func UDP(t MessageType, id string, data msgp.Marshaler) *ClientMessage {
 	m := New(t, data)
-	return &ClientUDPMessage{Message: *m, ID: id}
+	return &ClientMessage{Message: *m, ID: id}
 }
 
 type Empty struct {
@@ -80,37 +71,6 @@ type RotateMsg struct {
 
 type BoostMsg struct {
 	Boosting bool `msg:"boosting"`
-}
-
-type PlayerMovedMsg struct {
-	ID  string `msg:"id"`
-	Dir string `msg:"dir"`
-}
-
-type PlayerRotatedMsg struct {
-	ID  string         `msg:"id"`
-	Dir game.Direction `msg:"dir"`
-}
-
-type PlayerTeleportedMsg struct {
-	ID string `msg:"id"`
-}
-
-type PlayerBlinkedMsg struct {
-	ID string `msg:"id"`
-}
-
-type PlayerHookedMsg struct {
-	ID string `msg:"id"`
-}
-
-type PlayerBrakedMsg struct {
-	ID string `msg:"id"`
-}
-
-type PlayerBoostedMsg struct {
-	ID       string `msg:"id"`
-	Boosting bool   `msg:"boosting"`
 }
 
 type GameStateMsg struct {
