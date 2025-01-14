@@ -82,6 +82,9 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 	needsUnmarshal := false
 	needsBroadcast := true
 	switch msg.T {
+	case messages.ClMsgPing:
+		return c.handlePing()
+
 	case messages.ClMsgHello:
 		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
 		return nil
@@ -104,7 +107,6 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		needsUnmarshal = true
 
 	case messages.ClMsgTeleport, messages.ClMsgBlink, messages.ClMsgHook, messages.ClMsgBrake:
-		// Эти виды сообщений не нужны для распаковки
 		break
 
 	default:
@@ -152,6 +154,15 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		return nil
 	}
 
+	return nil
+}
+
+func (c *srvClient) handlePing() error {
+	err := c.sendTCP(messages.SrvMsgPong)
+	if err != nil {
+		slog.Error("could not send Pong", "error", err.Error())
+		return err
+	}
 	return nil
 }
 

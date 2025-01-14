@@ -50,6 +50,7 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()), 0, 0)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()), 0, 20)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ping: %d", c.ping.Milliseconds()), 0, 40)
 
 }
 
