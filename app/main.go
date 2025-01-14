@@ -5,6 +5,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinylib/msgp/msgp"
@@ -63,11 +64,14 @@ type gameClient struct {
 
 	untouchableTimers map[string]*untouchableTimer
 
-	tcpAddr string
-	udpAddr string
-	TCPConn net.Conn
-	UDPConn *net.UDPConn
+	tcpAddr      string
+	TCPConn      net.Conn
+	pingInterval time.Duration
+	ping         time.Duration
+	lastPingTime time.Time
 
+	udpAddr       string
+	UDPConn       *net.UDPConn
 	udpMsgCounter atomic.Uint64
 
 	mu sync.Mutex
@@ -86,6 +90,7 @@ func main() {
 		untouchableTimers: map[string]*untouchableTimer{},
 		screen:            screenWait,
 		tcpAddr:           tcpAddr,
+		pingInterval:      time.Second,
 		udpAddr:           udpAddr,
 	}
 

@@ -11,12 +11,14 @@ import (
 type MessageType int
 
 const (
-	SrvMsgYourID MessageType = iota
+	SrvMsgPong MessageType = iota
+	SrvMsgYourID
 	SrvMsgYouJoined
 	SrvMsgPlayerJoined
 	SrvMsgGameState
 
 	ClMsgHello
+	ClMsgPing
 	ClMsgJoinGame
 	ClMsgMove
 	ClMsgRotate

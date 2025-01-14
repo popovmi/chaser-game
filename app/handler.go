@@ -10,9 +10,13 @@ import (
 	"wars/lib/messages"
 )
 
-func (c *gameClient) handleMessage(msg *messages.Message) error {
+func (c *gameClient) handleMessage(msg *messages.Message, expired bool) error {
 	var srvMsg msgp.Unmarshaler
 	switch msg.T {
+	case messages.SrvMsgPong:
+		c.ping = time.Since(c.lastPingTime)
+		return nil
+
 	case messages.SrvMsgYourID:
 		srvMsg = &messages.YourIDMsg{}
 	case messages.SrvMsgYouJoined:
@@ -20,6 +24,9 @@ func (c *gameClient) handleMessage(msg *messages.Message) error {
 	case messages.SrvMsgPlayerJoined:
 		srvMsg = &game.Player{}
 	case messages.SrvMsgGameState:
+		if expired {
+			return nil
+		}
 		srvMsg = &messages.GameStateMsg{}
 	case messages.ClMsgMove,
 		messages.ClMsgRotate,
@@ -83,6 +90,7 @@ func (c *gameClient) handleYouJoined(msg *game.Game) {
 	c.createPortalsAnimations()
 	c.openUDPConnection()
 	c.screen = screenGame
+	go c.startPingRoutine()
 }
 
 func (c *gameClient) handlePlayerJoined(msg *game.Player) {

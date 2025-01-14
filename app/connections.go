@@ -4,10 +4,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"log/slog"
 	"net"
+	"time"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -56,7 +58,7 @@ func (c *gameClient) handleTCP() {
 			continue
 		}
 
-		err = c.handleMessage(msg)
+		err = c.handleMessage(msg, false)
 		if err != nil {
 			slog.Error("could not handle TCP message", "error", err.Error())
 			continue
@@ -121,12 +123,11 @@ func (c *gameClient) handleUDP() {
 				completeData = append(completeData, fragments[i]...)
 				totalSize += uint16(len(fragments[i]))
 			}
-			fresh := c.udpMsgCounter.CompareAndSwap(c.udpMsgCounter.Load(), messageID)
-			if !fresh {
-				slog.Warn("Expired package", "messageID", messageID)
-				delete(receivedMessages, messageID)
-				delete(payloadsReceived, messageID)
-				continue
+
+			lastID := c.udpMsgCounter.Load()
+			expired := !c.udpMsgCounter.CompareAndSwap(lastID, messageID)
+			if expired {
+				slog.Info("Expired package", "messageID", messageID, "lastID", lastID)
 			}
 			msg := &messages.Message{}
 			_, err = msg.UnmarshalMsg(completeData[:totalSize])
@@ -140,7 +141,7 @@ func (c *gameClient) handleUDP() {
 			delete(receivedMessages, messageID)
 			delete(payloadsReceived, messageID)
 
-			if err := c.handleMessage(msg); err != nil {
+			if err := c.handleMessage(msg, expired); err != nil {
 				slog.Error("could not handle UDP message", "messageID", messageID, "error", err.Error())
 				continue
 			}
@@ -191,5 +192,24 @@ func (c *gameClient) sendMsgWithBody(conType string, t messages.MessageType, dat
 		return c.sendUDPWithBody(t, data)
 	default:
 		return errors.New("unknown con type")
+	}
+}
+
+func (c *gameClient) sendPing() error {
+	c.lastPingTime = time.Now()
+	return c.sendTCP(messages.ClMsgPing)
+}
+
+func (c *gameClient) startPingRoutine() {
+	ticker := time.NewTicker(c.pingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.sendPing(); err != nil {
+				fmt.Println("Failed to send ping:", err)
+			}
+		}
 	}
 }
