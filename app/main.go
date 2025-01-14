@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinylib/msgp/msgp"
@@ -67,6 +68,8 @@ type gameClient struct {
 	TCPConn net.Conn
 	UDPConn *net.UDPConn
 
+	udpMsgCounter atomic.Uint64
+
 	mu sync.Mutex
 }
 
@@ -95,7 +98,6 @@ func main() {
 			c.UDPConn.Close()
 		}
 	}()
-
 	ebiten.SetWindowTitle("WARS")
 	ebiten.SetWindowSize(defaultWindowWidth, defaultWindowHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)

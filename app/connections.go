@@ -121,7 +121,13 @@ func (c *gameClient) handleUDP() {
 				completeData = append(completeData, fragments[i]...)
 				totalSize += uint16(len(fragments[i]))
 			}
-
+			fresh := c.udpMsgCounter.CompareAndSwap(c.udpMsgCounter.Load(), messageID)
+			if !fresh {
+				slog.Warn("Expired package", "messageID", messageID)
+				delete(receivedMessages, messageID)
+				delete(payloadsReceived, messageID)
+				continue
+			}
 			msg := &messages.Message{}
 			_, err = msg.UnmarshalMsg(completeData[:totalSize])
 			if err != nil {
