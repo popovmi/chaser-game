@@ -2,7 +2,6 @@ package main
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -10,10 +9,13 @@ import (
 	"wars/lib/messages"
 )
 
-type handler func(msg msgp.Unmarshaler)
-
 func (c *gameClient) handleMessage(msg *messages.Message) error {
-	var srvMsg msgp.Unmarshaler
+	var (
+		srvMsg, clMsg   msgp.Unmarshaler
+		isClientMessage bool
+		clientId        string
+	)
+
 	switch msg.T {
 	case messages.SrvMsgYourID:
 		srvMsg = &messages.YourIDMsg{}
@@ -23,42 +25,87 @@ func (c *gameClient) handleMessage(msg *messages.Message) error {
 		srvMsg = &game.Player{}
 	case messages.SrvMsgGameState:
 		srvMsg = &messages.GameStateMsg{}
-	case messages.SrvMsgPlayerMoved:
-		srvMsg = &messages.PlayerMovedMsg{}
-	case messages.SrvMsgPlayerRotated:
-		srvMsg = &messages.PlayerRotatedMsg{}
-	case messages.SrvMsgPlayerTeleported:
-		srvMsg = &messages.PlayerTeleportedMsg{}
-	case messages.SrvMsgPlayerBlinked:
-		srvMsg = &messages.PlayerBlinkedMsg{}
-	case messages.SrvMsgPlayerHooked:
-		srvMsg = &messages.PlayerHookedMsg{}
-	case messages.SrvMsgPlayerBraked:
-		srvMsg = &messages.PlayerBrakedMsg{}
-	case messages.SrvMsgPlayerBoosted:
-		srvMsg = &messages.PlayerBoostedMsg{}
+	case messages.ClMsgMove:
+		isClientMessage = true
+		clMsg = &messages.MoveMsg{}
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgRotate:
+		isClientMessage = true
+		clMsg = &messages.RotateMsg{}
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgBoost:
+		isClientMessage = true
+		clMsg = &messages.BoostMsg{}
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgTeleport:
+		isClientMessage = true
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgBlink:
+		isClientMessage = true
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgHook:
+		isClientMessage = true
+		srvMsg = &messages.ClientMessage{}
+	case messages.ClMsgBrake:
+		isClientMessage = true
+		srvMsg = &messages.ClientMessage{}
+	default:
 	}
 
 	if srvMsg != nil {
 		_, err := srvMsg.UnmarshalMsg(msg.B)
 		if err != nil {
+			slog.Info("could not unmarshal srvMsg", "msg", msg, "err", err.Error())
 			return err
 		}
 	}
 
-	map[messages.MessageType]handler{
-		messages.SrvMsgYourID:           c.handleYourId,
-		messages.SrvMsgYouJoined:        c.handleYouJoined,
-		messages.SrvMsgPlayerJoined:     c.handlePlayerJoined,
-		messages.SrvMsgGameState:        c.handleGameState,
-		messages.SrvMsgPlayerMoved:      c.handlePlayerMoved,
-		messages.SrvMsgPlayerRotated:    c.handlePlayerRotated,
-		messages.SrvMsgPlayerTeleported: c.handlePlayerTeleported,
-		messages.SrvMsgPlayerBlinked:    c.handlePlayerBlinked,
-		messages.SrvMsgPlayerHooked:     c.handlePlayerHooked,
-		messages.SrvMsgPlayerBraked:     c.handlePlayerBraked,
-		messages.SrvMsgPlayerBoosted:    c.handlePlayerBoosted,
-	}[msg.T](srvMsg)
+	if isClientMessage {
+		clientId = srvMsg.(*messages.ClientMessage).ID
+	}
+
+	if clMsg != nil {
+		_, err := clMsg.UnmarshalMsg(srvMsg.(*messages.ClientMessage).B)
+		if err != nil {
+			slog.Info("could not unmarshal clMsg", "srvMsg", srvMsg, "err", err.Error())
+			return err
+		}
+	}
+
+	switch msg.T {
+	case messages.SrvMsgYourID:
+		c.handleYourId(srvMsg)
+
+	case messages.SrvMsgYouJoined:
+		c.handleYouJoined(srvMsg)
+
+	case messages.SrvMsgPlayerJoined:
+		c.handlePlayerJoined(srvMsg)
+
+	case messages.SrvMsgGameState:
+		c.handleGameState(srvMsg)
+
+	case messages.ClMsgMove:
+		c.handlePlayerMoved(clientId, clMsg.(*messages.MoveMsg))
+
+	case messages.ClMsgRotate:
+		c.handlePlayerRotated(clientId, clMsg.(*messages.RotateMsg))
+
+	case messages.ClMsgBoost:
+		c.handlePlayerBoosted(clientId, clMsg.(*messages.BoostMsg))
+
+	case messages.ClMsgTeleport:
+		c.handlePlayerTeleported(clientId)
+
+	case messages.ClMsgBlink:
+		c.handlePlayerBlinked(clientId)
+
+	case messages.ClMsgHook:
+		c.handlePlayerHooked(clientId)
+
+	case messages.ClMsgBrake:
+		c.handlePlayerBraked(clientId)
+	}
 
 	return nil
 }
@@ -110,60 +157,53 @@ func (c *gameClient) handleGameState(srvMsg msgp.Unmarshaler) {
 		c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
 	}
 	for k, portal := range msg.Game.PortalNetwork.Portals {
-		*c.game.PortalNetwork.Portals[k] = *portal
+		c.game.PortalNetwork.Portals[k].LastUsedAt = portal.LastUsedAt
 	}
-	c.game.PreviousTick = time.Now().UnixMilli()
+	c.game.Tick()
 	c.moveCamera()
 }
 
-func (c *gameClient) handlePlayerMoved(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerMovedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].HandleMove(msg.Dir)
+func (c *gameClient) handlePlayerMoved(id string, msg *messages.MoveMsg) {
+	if id != c.clientID {
+		c.game.Players[id].HandleMove(msg.Dir)
 	}
 }
 
-func (c *gameClient) handlePlayerRotated(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerRotatedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].HandleRotate(msg.Dir)
+func (c *gameClient) handlePlayerRotated(id string, msg *messages.RotateMsg) {
+	if id != c.clientID {
+		c.game.Players[id].HandleRotate(msg.Dir)
 	}
 }
 
-func (c *gameClient) handlePlayerTeleported(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerTeleportedMsg)
-	if msg.ID != c.clientID {
-		if c.game.PortalNetwork.Teleport(c.game.Players[msg.ID]) {
+func (c *gameClient) handlePlayerTeleported(id string) {
+	if id != c.clientID {
+		if c.game.PortalNetwork.Teleport(c.game.Players[id]) {
 			c.audio.playPortal()
 		}
 	}
 }
 
-func (c *gameClient) handlePlayerBlinked(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerBlinkedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].HandleBlink()
+func (c *gameClient) handlePlayerBlinked(id string) {
+	if id != c.clientID {
+		c.game.Players[id].HandleBlink()
 	}
 
 }
 
-func (c *gameClient) handlePlayerHooked(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerHookedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].UseHook()
+func (c *gameClient) handlePlayerHooked(id string) {
+	if id != c.clientID {
+		c.game.Players[id].UseHook()
 	}
 }
 
-func (c *gameClient) handlePlayerBraked(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerBrakedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].Brake()
+func (c *gameClient) handlePlayerBraked(id string) {
+	if id != c.clientID {
+		c.game.Players[id].Brake()
 	}
 }
 
-func (c *gameClient) handlePlayerBoosted(srvMsg msgp.Unmarshaler) {
-	msg := srvMsg.(*messages.PlayerBoostedMsg)
-	if msg.ID != c.clientID {
-		c.game.Players[msg.ID].HandleBoost(msg.Boosting)
+func (c *gameClient) handlePlayerBoosted(id string, msg *messages.BoostMsg) {
+	if id != c.clientID {
+		c.game.Players[id].HandleBoost(msg.Boosting)
 	}
 }

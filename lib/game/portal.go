@@ -12,9 +12,9 @@ import (
 
 type Portal struct {
 	ID         string          `msg:"id"`
-	LinkID     string          `msg:"link_id"`
+	LinkID     string          `msg:"link_id,omitempty"`
 	LastUsedAt time.Time       `msg:"last_used_at"`
-	Pos        vector.Vector2D `msg:"pos"`
+	Pos        vector.Vector2D `msg:"pos,omitempty"`
 }
 
 func newPortal(linkID string, x, y float64) *Portal {
@@ -31,8 +31,8 @@ func (p *Portal) Touching(plr *Player) bool {
 
 type PortalLink struct {
 	ID        string               `msg:"id"`
-	PortalIDs []string             `msg:"portals"`
-	LastUsed  map[string]time.Time `msg:"lu"`
+	PortalIDs []string             `msg:"portals,allownil"`
+	LastUsed  map[string]time.Time `msg:"lu,omitempty"`
 }
 
 func newPortalLink() *PortalLink {
@@ -120,5 +120,24 @@ func (pn *PortalNetwork) TeleportTick(player *Player) {
 	if progress >= 1 {
 		player.Teleporting = false
 		player.Teleported = false
+		player.DepPortalID = ""
+		player.ArrPortalID = ""
 	}
+}
+
+func (pn *PortalNetwork) Short() *PortalNetwork {
+	short := &PortalNetwork{Portals: make(map[string]*Portal), Links: make(map[string]*PortalLink)}
+	for _, port := range pn.Portals {
+		short.Portals[port.ID] = &Portal{
+			ID:         port.ID,
+			LastUsedAt: port.LastUsedAt,
+		}
+	}
+	for _, link := range pn.Links {
+		short.Links[link.ID] = &PortalLink{
+			ID:       link.ID,
+			LastUsed: link.LastUsed,
+		}
+	}
+	return short
 }

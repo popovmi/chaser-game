@@ -39,31 +39,31 @@ type Player struct {
 	Kills  int `msg:"kills"`
 	Deaths int `msg:"deaths"`
 
-	DeathPos    vector.Vector2D `msg:"death_pos"`
-	DeadAt      time.Time       `msg:"dead_at"`
-	RespawnedAt time.Time       `msg:"respawned_at"`
+	DeathPos    vector.Vector2D `msg:"death_pos,omitempty"`
+	DeadAt      time.Time       `msg:"dead_at,omitempty"`
+	RespawnedAt time.Time       `msg:"respawned_at,omitempty"`
 
 	Position    vector.Vector2D `msg:"position"`
 	Velocity    vector.Vector2D `msg:"velocity"`
-	Angle       float64         `msg:"angle"`
-	MoveDir     string          `msg:"move_dir"`
-	RotationDir Direction       `msg:"turn_dir"`
-	Boosting    bool            `msg:"is_boosting"`
+	Angle       float64         `msg:"angle,omitempty"`
+	MoveDir     string          `msg:"move_dir,omitempty"`
+	RotationDir Direction       `msg:"turn_dir,omitempty"`
+	Boosting    bool            `msg:"is_boosting,omitempty"`
 
-	Hook       *Hook     `msg:"hook"`
-	HookedAt   time.Time `msg:"hooked_at"`
-	IsHooked   bool      `msg:"is_hooked"`
-	CaughtByID string    `msg:"caught_by_id"`
+	Hook       *Hook     `msg:"hook,omitempty"`
+	HookedAt   time.Time `msg:"hooked_at,omitempty"`
+	IsHooked   bool      `msg:"is_hooked,omitempty"`
+	CaughtByID string    `msg:"caught_by_id,omitempty"`
 
-	Blinking  bool      `msg:"blinking"`
-	BlinkedAt time.Time `msg:"blinked_at"`
-	Blinked   bool      `msg:"blinked"`
+	Blinking  bool      `msg:"blinking,omitempty"`
+	BlinkedAt time.Time `msg:"blinked_at,omitempty"`
+	Blinked   bool      `msg:"blinked,omitempty"`
 
-	Teleporting  bool      `msg:"teleporting"`
-	DepPortalID  string    `msg:"dep_portal_id"`
-	ArrPortalID  string    `msg:"arr_portal_id"`
-	Teleported   bool      `msg:"teleported"`
-	TeleportedAt time.Time `msg:"teleported_at"`
+	Teleporting  bool      `msg:"teleporting,omitempty"`
+	DepPortalID  string    `msg:"dep_portal_id,omitempty"`
+	ArrPortalID  string    `msg:"arr_portal_id,omitempty"`
+	Teleported   bool      `msg:"teleported,omitempty"`
+	TeleportedAt time.Time `msg:"teleported_at,omitempty"`
 
 	mu sync.Mutex
 }
@@ -91,24 +91,6 @@ func (p *Player) Tick(dt float64, players map[string]*Player) {
 		if p.Hook == nil || !p.Hook.Stuck {
 			p.Accelerate(dt)
 			p.Step(dt)
-		}
-	}
-}
-
-func (p *Player) BlinkTick() {
-	if p.Blinking {
-		progress := time.Since(p.BlinkedAt).Seconds() / BlinkDuration
-		if progress >= 0.5 && !p.Blinked {
-			dx, dy := blinkDistance*math.Cos(p.Angle), blinkDistance*math.Sin(p.Angle)
-			p.Position.Add(dx, dy)
-			if p.Hook != nil {
-				p.Hook.End.Add(dx, dy)
-			}
-			p.Blinked = true
-		}
-		if progress >= 1 {
-			p.Blinking = false
-			p.Blinked = false
 		}
 	}
 }
@@ -199,24 +181,26 @@ func (p *Player) Step(dt float64) {
 	p.Position.Add(p.Velocity.X*dt, p.Velocity.Y*dt)
 }
 
-func (p *Player) HandleBlink() {
-	if !p.Blinking && time.Since(p.BlinkedAt).Seconds() >= BlinkCooldown {
-		p.Blinking = true
-		p.BlinkedAt = time.Now()
-	}
-}
-
 func (p *Player) HandleMove(dir string) {
+	if p.Status == PlayerStatusDead {
+		return
+	}
 	p.MoveDir = dir
 }
 
 func (p *Player) HandleBoost(boosting bool) {
+	if p.Status == PlayerStatusDead {
+		return
+	}
 	if !p.IsHooked && (p.Hook == nil || !p.Hook.Stuck) {
 		p.Boosting = boosting
 	}
 }
 
 func (p *Player) HandleRotate(dir Direction) {
+	if p.Status == PlayerStatusDead {
+		return
+	}
 	p.RotationDir = dir
 }
 
@@ -270,6 +254,9 @@ func (p *Player) CollidePlayer(p2 *Player) {
 }
 
 func (p *Player) Brake() {
+	if p.Status == PlayerStatusDead {
+		return
+	}
 	p.MoveDir = ""
 	p.Velocity.Mul(Braking)
 }

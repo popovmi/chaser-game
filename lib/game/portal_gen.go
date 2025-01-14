@@ -63,46 +63,64 @@ func (z *Portal) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Portal) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 4
-	// write "id"
-	err = en.Append(0x84, 0xa2, 0x69, 0x64)
+	// check for omitted fields
+	zb0001Len := uint32(4)
+	var zb0001Mask uint8 /* 4 bits */
+	_ = zb0001Mask
+	if z.LinkID == "" {
+		zb0001Len--
+		zb0001Mask |= 0x2
+	}
+	// variable map header, size zb0001Len
+	err = en.Append(0x80 | uint8(zb0001Len))
 	if err != nil {
 		return
 	}
-	err = en.WriteString(z.ID)
-	if err != nil {
-		err = msgp.WrapError(err, "ID")
-		return
-	}
-	// write "link_id"
-	err = en.Append(0xa7, 0x6c, 0x69, 0x6e, 0x6b, 0x5f, 0x69, 0x64)
-	if err != nil {
-		return
-	}
-	err = en.WriteString(z.LinkID)
-	if err != nil {
-		err = msgp.WrapError(err, "LinkID")
-		return
-	}
-	// write "last_used_at"
-	err = en.Append(0xac, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
-	if err != nil {
-		return
-	}
-	err = en.WriteTime(z.LastUsedAt)
-	if err != nil {
-		err = msgp.WrapError(err, "LastUsedAt")
-		return
-	}
-	// write "pos"
-	err = en.Append(0xa3, 0x70, 0x6f, 0x73)
-	if err != nil {
-		return
-	}
-	err = z.Pos.EncodeMsg(en)
-	if err != nil {
-		err = msgp.WrapError(err, "Pos")
-		return
+
+	// skip if no fields are to be emitted
+	if zb0001Len != 0 {
+		// write "id"
+		err = en.Append(0xa2, 0x69, 0x64)
+		if err != nil {
+			return
+		}
+		err = en.WriteString(z.ID)
+		if err != nil {
+			err = msgp.WrapError(err, "ID")
+			return
+		}
+		if (zb0001Mask & 0x2) == 0 { // if not omitted
+			// write "link_id"
+			err = en.Append(0xa7, 0x6c, 0x69, 0x6e, 0x6b, 0x5f, 0x69, 0x64)
+			if err != nil {
+				return
+			}
+			err = en.WriteString(z.LinkID)
+			if err != nil {
+				err = msgp.WrapError(err, "LinkID")
+				return
+			}
+		}
+		// write "last_used_at"
+		err = en.Append(0xac, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
+		if err != nil {
+			return
+		}
+		err = en.WriteTime(z.LastUsedAt)
+		if err != nil {
+			err = msgp.WrapError(err, "LastUsedAt")
+			return
+		}
+		// write "pos"
+		err = en.Append(0xa3, 0x70, 0x6f, 0x73)
+		if err != nil {
+			return
+		}
+		err = z.Pos.EncodeMsg(en)
+		if err != nil {
+			err = msgp.WrapError(err, "Pos")
+			return
+		}
 	}
 	return
 }
@@ -110,22 +128,37 @@ func (z *Portal) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Portal) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 4
-	// string "id"
-	o = append(o, 0x84, 0xa2, 0x69, 0x64)
-	o = msgp.AppendString(o, z.ID)
-	// string "link_id"
-	o = append(o, 0xa7, 0x6c, 0x69, 0x6e, 0x6b, 0x5f, 0x69, 0x64)
-	o = msgp.AppendString(o, z.LinkID)
-	// string "last_used_at"
-	o = append(o, 0xac, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
-	o = msgp.AppendTime(o, z.LastUsedAt)
-	// string "pos"
-	o = append(o, 0xa3, 0x70, 0x6f, 0x73)
-	o, err = z.Pos.MarshalMsg(o)
-	if err != nil {
-		err = msgp.WrapError(err, "Pos")
-		return
+	// check for omitted fields
+	zb0001Len := uint32(4)
+	var zb0001Mask uint8 /* 4 bits */
+	_ = zb0001Mask
+	if z.LinkID == "" {
+		zb0001Len--
+		zb0001Mask |= 0x2
+	}
+	// variable map header, size zb0001Len
+	o = append(o, 0x80|uint8(zb0001Len))
+
+	// skip if no fields are to be emitted
+	if zb0001Len != 0 {
+		// string "id"
+		o = append(o, 0xa2, 0x69, 0x64)
+		o = msgp.AppendString(o, z.ID)
+		if (zb0001Mask & 0x2) == 0 { // if not omitted
+			// string "link_id"
+			o = append(o, 0xa7, 0x6c, 0x69, 0x6e, 0x6b, 0x5f, 0x69, 0x64)
+			o = msgp.AppendString(o, z.LinkID)
+		}
+		// string "last_used_at"
+		o = append(o, 0xac, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x61, 0x74)
+		o = msgp.AppendTime(o, z.LastUsedAt)
+		// string "pos"
+		o = append(o, 0xa3, 0x70, 0x6f, 0x73)
+		o, err = z.Pos.MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Pos")
+			return
+		}
 	}
 	return
 }
@@ -215,22 +248,31 @@ func (z *PortalLink) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "portals":
-			var zb0002 uint32
-			zb0002, err = dc.ReadArrayHeader()
-			if err != nil {
-				err = msgp.WrapError(err, "PortalIDs")
-				return
-			}
-			if cap(z.PortalIDs) >= int(zb0002) {
-				z.PortalIDs = (z.PortalIDs)[:zb0002]
-			} else {
-				z.PortalIDs = make([]string, zb0002)
-			}
-			for za0001 := range z.PortalIDs {
-				z.PortalIDs[za0001], err = dc.ReadString()
+			if dc.IsNil() {
+				err = dc.ReadNil()
 				if err != nil {
-					err = msgp.WrapError(err, "PortalIDs", za0001)
+					err = msgp.WrapError(err, "PortalIDs")
 					return
+				}
+				z.PortalIDs = nil
+			} else {
+				var zb0002 uint32
+				zb0002, err = dc.ReadArrayHeader()
+				if err != nil {
+					err = msgp.WrapError(err, "PortalIDs")
+					return
+				}
+				if z.PortalIDs != nil && cap(z.PortalIDs) >= int(zb0002) {
+					z.PortalIDs = (z.PortalIDs)[:zb0002]
+				} else {
+					z.PortalIDs = make([]string, zb0002)
+				}
+				for za0001 := range z.PortalIDs {
+					z.PortalIDs[za0001], err = dc.ReadString()
+					if err != nil {
+						err = msgp.WrapError(err, "PortalIDs", za0001)
+						return
+					}
 				}
 			}
 		case "lu":
@@ -276,54 +318,79 @@ func (z *PortalLink) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *PortalLink) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 3
-	// write "id"
-	err = en.Append(0x83, 0xa2, 0x69, 0x64)
+	// check for omitted fields
+	zb0001Len := uint32(3)
+	var zb0001Mask uint8 /* 3 bits */
+	_ = zb0001Mask
+	if z.LastUsed == nil {
+		zb0001Len--
+		zb0001Mask |= 0x4
+	}
+	// variable map header, size zb0001Len
+	err = en.Append(0x80 | uint8(zb0001Len))
 	if err != nil {
 		return
 	}
-	err = en.WriteString(z.ID)
-	if err != nil {
-		err = msgp.WrapError(err, "ID")
-		return
-	}
-	// write "portals"
-	err = en.Append(0xa7, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x73)
-	if err != nil {
-		return
-	}
-	err = en.WriteArrayHeader(uint32(len(z.PortalIDs)))
-	if err != nil {
-		err = msgp.WrapError(err, "PortalIDs")
-		return
-	}
-	for za0001 := range z.PortalIDs {
-		err = en.WriteString(z.PortalIDs[za0001])
+
+	// skip if no fields are to be emitted
+	if zb0001Len != 0 {
+		// write "id"
+		err = en.Append(0xa2, 0x69, 0x64)
 		if err != nil {
-			err = msgp.WrapError(err, "PortalIDs", za0001)
 			return
 		}
-	}
-	// write "lu"
-	err = en.Append(0xa2, 0x6c, 0x75)
-	if err != nil {
-		return
-	}
-	err = en.WriteMapHeader(uint32(len(z.LastUsed)))
-	if err != nil {
-		err = msgp.WrapError(err, "LastUsed")
-		return
-	}
-	for za0002, za0003 := range z.LastUsed {
-		err = en.WriteString(za0002)
+		err = en.WriteString(z.ID)
 		if err != nil {
-			err = msgp.WrapError(err, "LastUsed")
+			err = msgp.WrapError(err, "ID")
 			return
 		}
-		err = en.WriteTime(za0003)
+		// write "portals"
+		err = en.Append(0xa7, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x73)
 		if err != nil {
-			err = msgp.WrapError(err, "LastUsed", za0002)
 			return
+		}
+		if z.PortalIDs == nil { // allownil: if nil
+			err = en.WriteNil()
+			if err != nil {
+				return
+			}
+		} else {
+			err = en.WriteArrayHeader(uint32(len(z.PortalIDs)))
+			if err != nil {
+				err = msgp.WrapError(err, "PortalIDs")
+				return
+			}
+			for za0001 := range z.PortalIDs {
+				err = en.WriteString(z.PortalIDs[za0001])
+				if err != nil {
+					err = msgp.WrapError(err, "PortalIDs", za0001)
+					return
+				}
+			}
+		}
+		if (zb0001Mask & 0x4) == 0 { // if not omitted
+			// write "lu"
+			err = en.Append(0xa2, 0x6c, 0x75)
+			if err != nil {
+				return
+			}
+			err = en.WriteMapHeader(uint32(len(z.LastUsed)))
+			if err != nil {
+				err = msgp.WrapError(err, "LastUsed")
+				return
+			}
+			for za0002, za0003 := range z.LastUsed {
+				err = en.WriteString(za0002)
+				if err != nil {
+					err = msgp.WrapError(err, "LastUsed")
+					return
+				}
+				err = en.WriteTime(za0003)
+				if err != nil {
+					err = msgp.WrapError(err, "LastUsed", za0002)
+					return
+				}
+			}
 		}
 	}
 	return
@@ -332,22 +399,41 @@ func (z *PortalLink) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *PortalLink) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
-	// string "id"
-	o = append(o, 0x83, 0xa2, 0x69, 0x64)
-	o = msgp.AppendString(o, z.ID)
-	// string "portals"
-	o = append(o, 0xa7, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x73)
-	o = msgp.AppendArrayHeader(o, uint32(len(z.PortalIDs)))
-	for za0001 := range z.PortalIDs {
-		o = msgp.AppendString(o, z.PortalIDs[za0001])
+	// check for omitted fields
+	zb0001Len := uint32(3)
+	var zb0001Mask uint8 /* 3 bits */
+	_ = zb0001Mask
+	if z.LastUsed == nil {
+		zb0001Len--
+		zb0001Mask |= 0x4
 	}
-	// string "lu"
-	o = append(o, 0xa2, 0x6c, 0x75)
-	o = msgp.AppendMapHeader(o, uint32(len(z.LastUsed)))
-	for za0002, za0003 := range z.LastUsed {
-		o = msgp.AppendString(o, za0002)
-		o = msgp.AppendTime(o, za0003)
+	// variable map header, size zb0001Len
+	o = append(o, 0x80|uint8(zb0001Len))
+
+	// skip if no fields are to be emitted
+	if zb0001Len != 0 {
+		// string "id"
+		o = append(o, 0xa2, 0x69, 0x64)
+		o = msgp.AppendString(o, z.ID)
+		// string "portals"
+		o = append(o, 0xa7, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x73)
+		if z.PortalIDs == nil { // allownil: if nil
+			o = msgp.AppendNil(o)
+		} else {
+			o = msgp.AppendArrayHeader(o, uint32(len(z.PortalIDs)))
+			for za0001 := range z.PortalIDs {
+				o = msgp.AppendString(o, z.PortalIDs[za0001])
+			}
+		}
+		if (zb0001Mask & 0x4) == 0 { // if not omitted
+			// string "lu"
+			o = append(o, 0xa2, 0x6c, 0x75)
+			o = msgp.AppendMapHeader(o, uint32(len(z.LastUsed)))
+			for za0002, za0003 := range z.LastUsed {
+				o = msgp.AppendString(o, za0002)
+				o = msgp.AppendTime(o, za0003)
+			}
+		}
 	}
 	return
 }
@@ -377,22 +463,27 @@ func (z *PortalLink) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "portals":
-			var zb0002 uint32
-			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "PortalIDs")
-				return
-			}
-			if cap(z.PortalIDs) >= int(zb0002) {
-				z.PortalIDs = (z.PortalIDs)[:zb0002]
+			if msgp.IsNil(bts) {
+				bts = bts[1:]
+				z.PortalIDs = nil
 			} else {
-				z.PortalIDs = make([]string, zb0002)
-			}
-			for za0001 := range z.PortalIDs {
-				z.PortalIDs[za0001], bts, err = msgp.ReadStringBytes(bts)
+				var zb0002 uint32
+				zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 				if err != nil {
-					err = msgp.WrapError(err, "PortalIDs", za0001)
+					err = msgp.WrapError(err, "PortalIDs")
 					return
+				}
+				if z.PortalIDs != nil && cap(z.PortalIDs) >= int(zb0002) {
+					z.PortalIDs = (z.PortalIDs)[:zb0002]
+				} else {
+					z.PortalIDs = make([]string, zb0002)
+				}
+				for za0001 := range z.PortalIDs {
+					z.PortalIDs[za0001], bts, err = msgp.ReadStringBytes(bts)
+					if err != nil {
+						err = msgp.WrapError(err, "PortalIDs", za0001)
+						return
+					}
 				}
 			}
 		case "lu":
