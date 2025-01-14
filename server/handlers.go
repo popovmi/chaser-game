@@ -104,7 +104,6 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		needsUnmarshal = true
 
 	case messages.ClMsgTeleport, messages.ClMsgBlink, messages.ClMsgHook, messages.ClMsgBrake:
-		// Эти виды сообщений не нужны для распаковки
 		break
 
 	default:
