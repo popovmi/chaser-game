@@ -29,7 +29,7 @@ const (
 	BlinkDuration = 0.4
 	BlinkCooldown = 2.0 + BlinkDuration
 
-	HookCooldown         = 3.0
+	HookCooldown         = 2.0
 	MaxHookLength        = 400
 	hookVelocity         = 700
 	hookBackwardVelocity = 700

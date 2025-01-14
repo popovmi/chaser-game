@@ -114,14 +114,12 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 	}
 
 	if needsBroadcast {
-		go func() {
-			broadcastMsg := messages.New(msg.T, &messages.ClientMessage{ID: c.ID, Message: msg})
-			b, err := broadcastMsg.MarshalMsg(nil)
-			if err != nil {
-				slog.Error("could not encode message", "error", err.Error(), "msg", broadcastMsg)
-			}
-			srv.broadcastUDP(b)
-		}()
+		broadcastMsg := messages.New(msg.T, &messages.ClientMessage{ID: c.ID, Message: msg})
+		b, err := broadcastMsg.MarshalMsg(nil)
+		if err != nil {
+			slog.Error("could not encode message", "error", err.Error(), "msg", broadcastMsg)
+		}
+		srv.broadcastUDP(b)
 	}
 
 	if needsUnmarshal {
@@ -187,11 +185,9 @@ func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
 	}
 	for _, p := range srv.game.Players {
 		if p.ID != c.ID {
-			go func() {
-				if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
-					slog.Info("could not send joined player", "joinedID", c.ID, "targetID", p.ID)
-				}
-			}()
+			if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
+				slog.Info("could not send joined player", "joinedID", c.ID, "targetID", p.ID)
+			}
 		}
 	}
 	return nil

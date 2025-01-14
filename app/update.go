@@ -121,12 +121,10 @@ func (c *gameClient) joinGame(name string) error {
 func (c *gameClient) rotate(dir game.Direction) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.RotationDir {
-		go func() {
-			err := c.sendUDPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
-			if err != nil {
-				slog.Error("could not send move", "error", err.Error())
-			}
-		}()
+		err := c.sendUDPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
+		if err != nil {
+			slog.Error("could not send move", "error", err.Error())
+		}
 		p.HandleRotate(dir)
 	}
 }
@@ -134,12 +132,10 @@ func (c *gameClient) rotate(dir game.Direction) {
 func (c *gameClient) move(dir string) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && dir != p.MoveDir {
-		go func() {
-			err := c.sendUDPWithBody(messages.ClMsgMove, &messages.MoveMsg{Dir: dir})
-			if err != nil {
-				slog.Error("could not send move", "error", err.Error())
-			}
-		}()
+		err := c.sendUDPWithBody(messages.ClMsgMove, &messages.MoveMsg{Dir: dir})
+		if err != nil {
+			slog.Error("could not send move", "error", err.Error())
+		}
 		p.HandleMove(dir)
 	}
 }
@@ -147,12 +143,10 @@ func (c *gameClient) move(dir string) {
 func (c *gameClient) teleport() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
-		go func() {
-			err := c.sendUDP(messages.ClMsgTeleport)
-			if err != nil {
-				slog.Error("could not send teleport", "error", err.Error())
-			}
-		}()
+		err := c.sendUDP(messages.ClMsgTeleport)
+		if err != nil {
+			slog.Error("could not send teleport", "error", err.Error())
+		}
 		if c.game.PortalNetwork.Teleport(p) {
 			c.audio.playPortal()
 		}
@@ -162,12 +156,10 @@ func (c *gameClient) teleport() {
 func (c *gameClient) blink() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
-		go func() {
-			err := c.sendUDP(messages.ClMsgBlink)
-			if err != nil {
-				slog.Error("could not send teleport", "error", err.Error())
-			}
-		}()
+		err := c.sendUDP(messages.ClMsgBlink)
+		if err != nil {
+			slog.Error("could not send teleport", "error", err.Error())
+		}
 		p.HandleBlink()
 	}
 
@@ -176,12 +168,10 @@ func (c *gameClient) blink() {
 func (c *gameClient) hook() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
-		go func() {
-			err := c.sendUDP(messages.ClMsgHook)
-			if err != nil {
-				slog.Error("could not send hook", "error", err.Error())
-			}
-		}()
+		err := c.sendUDP(messages.ClMsgHook)
+		if err != nil {
+			slog.Error("could not send hook", "error", err.Error())
+		}
 		p.UseHook()
 	}
 }
@@ -189,12 +179,10 @@ func (c *gameClient) hook() {
 func (c *gameClient) brake() {
 	p, ok := c.game.Players[c.clientID]
 	if ok {
-		go func() {
-			err := c.sendUDP(messages.ClMsgBrake)
-			if err != nil {
-				slog.Error("could not send brake", "error", err.Error())
-			}
-		}()
+		err := c.sendUDP(messages.ClMsgBrake)
+		if err != nil {
+			slog.Error("could not send brake", "error", err.Error())
+		}
 		p.Brake()
 	}
 }
@@ -202,12 +190,10 @@ func (c *gameClient) brake() {
 func (c *gameClient) boost(boosting bool) {
 	p, ok := c.game.Players[c.clientID]
 	if ok && p.Boosting != boosting {
-		go func() {
-			err := c.sendUDPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
-			if err != nil {
-				slog.Error("could not send brake", "error", err.Error())
-			}
-		}()
+		err := c.sendUDPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
+		if err != nil {
+			slog.Error("could not send brake", "error", err.Error())
+		}
 		p.HandleBoost(boosting)
 	}
 }
