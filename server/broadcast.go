@@ -9,12 +9,13 @@ import (
 )
 
 func (srv *server) broadcastState() {
+
 	msg := messages.New(
 		messages.SrvMsgGameState,
 		&messages.GameStateMsg{
 			Game: &game.Game{
 				Players:       srv.game.Players,
-				PortalNetwork: srv.game.PortalNetwork,
+				PortalNetwork: srv.game.PortalNetwork.Short(),
 			},
 		},
 	)

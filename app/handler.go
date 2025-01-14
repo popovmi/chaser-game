@@ -2,7 +2,6 @@ package main
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/tinylib/msgp/msgp"
 
@@ -158,9 +157,9 @@ func (c *gameClient) handleGameState(srvMsg msgp.Unmarshaler) {
 		c.game.PortalNetwork.Links[k].LastUsed = link.LastUsed
 	}
 	for k, portal := range msg.Game.PortalNetwork.Portals {
-		*c.game.PortalNetwork.Portals[k] = *portal
+		c.game.PortalNetwork.Portals[k].LastUsedAt = portal.LastUsedAt
 	}
-	c.game.PreviousTick = time.Now().UnixMilli()
+	c.game.Tick()
 	c.moveCamera()
 }
 

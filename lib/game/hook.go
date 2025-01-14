@@ -68,7 +68,7 @@ func (p *Player) UseHook() {
 		p.Hook.IsReturning = true
 		return
 	}
-	if p.Hook == nil && time.Since(p.HookedAt).Seconds() >= HookCooldown {
+	if p.Status != PlayerStatusDead && p.Hook == nil && time.Since(p.HookedAt).Seconds() >= HookCooldown {
 		p.Hook = &Hook{
 			End: vector.NewVector2D(p.Position.X, p.Position.Y),
 			Vel: vector.NewVector2D(math.Cos(p.Angle)*hookVelocity, math.Sin(p.Angle)*hookVelocity),
