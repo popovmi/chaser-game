@@ -8,8 +8,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 
 	"wars/app/components"
-	"wars/lib/game"
-	"wars/lib/messages"
+	"wars/game"
+	"wars/messages"
 )
 
 func (c *gameClient) Update() error {
@@ -68,20 +68,14 @@ func (c *gameClient) updateMainScreen() error {
 }
 
 func (c *gameClient) updateGameScreen() error {
-	if c.game.Players[c.clientID] == nil {
+	state := c.game.State
+	_, ok := state.Players[c.clientID]
+	if !ok {
 		return nil
 	}
-	c.HandleInput()
-	wallHits, touches := c.game.Tick()
-	for id := range wallHits {
-		c.audio.wallHit.play(id)
-	}
-	for id := range touches {
-		c.audio.touch.play(id)
-	}
-	c.moveCamera()
+
 	animatePortalIds := make([]string, 0)
-	for _, p := range c.game.Players {
+	for _, p := range state.Players {
 		if !p.Touchable() {
 			ut, ok := c.untouchableTimers[p.ID]
 			if !ok {
@@ -99,13 +93,14 @@ func (c *gameClient) updateGameScreen() error {
 		//if animaion, ok :=
 		c.playerImages[p.ID].animation.Update()
 		if p.Teleporting {
-			animatePortalIds = append(animatePortalIds, p.DepPortalID, p.ArrPortalID)
+			animatePortalIds = append(animatePortalIds, p.FromPortalID, p.ToPortalID)
 		}
 		for _, id := range animatePortalIds {
 			c.portalAnimations[id].Update()
 		}
 	}
 
+	c.HandleInput()
 	return nil
 }
 
@@ -118,103 +113,41 @@ func (c *gameClient) joinGame(name string) error {
 	return nil
 }
 
-func (c *gameClient) rotate(dir game.Direction) {
-	p, ok := c.game.Players[c.clientID]
-	if ok && dir != p.RotationDir {
-		err := c.sendUDPWithBody(messages.ClMsgRotate, &messages.RotateMsg{Dir: dir})
-		if err != nil {
-			slog.Error("could not send move", "error", err.Error())
-		}
-		p.HandleRotate(dir)
-	}
-}
-
-func (c *gameClient) move(dir string) {
-	p, ok := c.game.Players[c.clientID]
-	if ok && dir != p.MoveDir {
-		err := c.sendUDPWithBody(messages.ClMsgMove, &messages.MoveMsg{Dir: dir})
-		if err != nil {
-			slog.Error("could not send move", "error", err.Error())
-		}
-		p.HandleMove(dir)
-	}
-}
-
-func (c *gameClient) teleport() {
-	p, ok := c.game.Players[c.clientID]
-	if ok {
-		err := c.sendUDP(messages.ClMsgTeleport)
-		if err != nil {
-			slog.Error("could not send teleport", "error", err.Error())
-		}
-		if c.game.PortalNetwork.Teleport(p) {
-			c.audio.playPortal()
-		}
-	}
-}
-
-func (c *gameClient) blink() {
-	p, ok := c.game.Players[c.clientID]
-	if ok {
-		err := c.sendUDP(messages.ClMsgBlink)
-		if err != nil {
-			slog.Error("could not send teleport", "error", err.Error())
-		}
-		p.HandleBlink()
-	}
-
-}
-
-func (c *gameClient) hook() {
-	p, ok := c.game.Players[c.clientID]
-	if ok {
-		err := c.sendUDP(messages.ClMsgHook)
-		if err != nil {
-			slog.Error("could not send hook", "error", err.Error())
-		}
-		p.UseHook()
-	}
-}
-
-func (c *gameClient) brake() {
-	p, ok := c.game.Players[c.clientID]
-	if ok {
-		err := c.sendUDP(messages.ClMsgBrake)
-		if err != nil {
-			slog.Error("could not send brake", "error", err.Error())
-		}
-		p.Brake()
-	}
-}
-
-func (c *gameClient) boost(boosting bool) {
-	p, ok := c.game.Players[c.clientID]
-	if ok && p.Boosting != boosting {
-		err := c.sendUDPWithBody(messages.ClMsgBoost, &messages.BoostMsg{Boosting: boosting})
-		if err != nil {
-			slog.Error("could not send brake", "error", err.Error())
-		}
-		p.HandleBoost(boosting)
-	}
-}
-
 func (c *gameClient) HandleInput() {
-	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
-		c.teleport()
+	p, ok := c.game.State.Players[c.clientID]
+	if !ok {
+		return
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		c.blink()
+	var commands game.Commands
+	if !p.Teleporting && inpututil.IsKeyJustPressed(ebiten.KeyE) {
+		commands = append(commands, game.Command{Action: game.CommandActionTeleport, PlayerID: p.ID})
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
-		c.hook()
+	if !p.Blinking && inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		commands = append(commands, game.Command{Action: game.CommandActionBlink, PlayerID: p.ID})
+	}
+	if p.Hook == nil && inpututil.IsKeyJustPressed(ebiten.KeyQ) {
+		commands = append(commands, game.Command{Action: game.CommandActionHook, PlayerID: p.ID})
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyShift) {
-		c.brake()
+		commands = append(commands, game.Command{Action: game.CommandActionBrake, PlayerID: p.ID})
+	}
+	if dir := getMoveDirection(); dir != p.MoveDirection {
+		commands = append(commands, game.Command{Action: game.CommandActionMove, PlayerID: p.ID, Payload: dir})
+	}
+	if dir := getRotateDirection(); dir != p.RotationDirection {
+		commands = append(commands, game.Command{Action: game.CommandActionRotate, PlayerID: p.ID, Payload: dir})
+	}
+	if boosting := ebiten.IsKeyPressed(ebiten.KeyUp); boosting != p.Boosting {
+		commands = append(commands, game.Command{Action: game.CommandActionBoost, PlayerID: p.ID, Payload: boosting})
+	}
+	if len(commands) > 0 {
+		c.game.AddCommands(commands)
+		err := c.sendUDPWithBody(messages.ClMsgInGameCommandPack, commands)
+		if err != nil {
+			slog.Error("could not send command", "error", err.Error())
+		}
 	}
 
-	c.rotate(getRotateDirection())
-	c.boost(ebiten.IsKeyPressed(ebiten.KeyUp))
-	c.move(getMoveDirection())
 }
 
 func getRotateDirection() game.Direction {

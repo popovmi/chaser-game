@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,8 +13,7 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"wars/app/components"
-	"wars/lib/colors"
-	"wars/lib/game"
+	"wars/game"
 )
 
 const (
@@ -80,11 +81,17 @@ type gameClient struct {
 var tcpAddr, udpAddr string
 
 func main() {
-	msgp.RegisterExtension(99, func() msgp.Extension { return new(colors.RGBA) })
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	msgp.RegisterExtension(99, func() msgp.Extension { return new(game.RGBA) })
+	msgp.RegisterExtension(100, func() msgp.Extension { return new(game.Direction) })
+	msgp.RegisterExtension(101, func() msgp.Extension { return new(game.PlayerStatus) })
 
 	LoadFonts()
 
 	c := &gameClient{
+		game:              game.NewGame(),
 		audio:             newGameMusic(),
 		playerImages:      map[string]*playerImg{},
 		untouchableTimers: map[string]*untouchableTimer{},

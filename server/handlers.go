@@ -2,14 +2,13 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net"
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"wars/game"
+	"wars/messages"
 )
 
 func (srv *server) handleUDPData(addr *net.UDPAddr, data []byte, n int) error {
@@ -45,15 +44,13 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 		return
 	}
 
-	num := srv.game.Counter.Add(1)
-	id := fmt.Sprintf("p%d", num)
-	c := &srvClient{Player: game.NewPlayer(id), ip: host, tcp: conn}
+	c := &srvClient{Player: game.NewPlayer(), ip: host, tcp: conn}
 	srv.clients[c.ID] = c
 
 	defer func() {
 		c.tcp.Close()
 		delete(srv.clients, c.ID)
-		srv.game.RemovePlayer(c.ID)
+		srv.game.DeletePlayer(c.ID)
 		srv.colors[c.Color] = false
 	}()
 
@@ -78,9 +75,6 @@ func (srv *server) handleTCPConnection(conn net.Conn) {
 }
 
 func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
-	var clMsg msgp.Unmarshaler
-	needsUnmarshal := false
-	needsBroadcast := true
 	switch msg.T {
 	case messages.ClMsgPing:
 		return c.handlePing()
@@ -90,64 +84,42 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		return nil
 
 	case messages.ClMsgJoinGame:
-		clMsg = &messages.JoinGameMsg{}
-		needsUnmarshal = true
-		needsBroadcast = false
+		clMsg := &messages.JoinGameMsg{}
+		_, err := clMsg.UnmarshalMsg(msg.B)
+		if err != nil {
+			return err
+		}
+		return srv.join(c, clMsg)
 
-	case messages.ClMsgMove:
-		clMsg = &messages.MoveMsg{}
-		needsUnmarshal = true
-
-	case messages.ClMsgRotate:
-		clMsg = &messages.RotateMsg{}
-		needsUnmarshal = true
-
-	case messages.ClMsgBoost:
-		clMsg = &messages.BoostMsg{}
-		needsUnmarshal = true
-
-	case messages.ClMsgTeleport, messages.ClMsgBlink, messages.ClMsgHook, messages.ClMsgBrake:
-		break
-
-	default:
-		return nil
-	}
-
-	if needsBroadcast {
-		broadcastMsg := messages.New(msg.T, &messages.ClientMessage{ID: c.ID, Message: msg})
+	case messages.ClMsgInGameCommandPack:
+		commands := game.Commands{}
+		_, err := commands.UnmarshalMsg(msg.B)
+		if err != nil {
+			return err
+		}
+		srv.game.AddCommands(commands)
+		broadcastMsg := messages.New(msg.T, commands)
 		b, err := broadcastMsg.MarshalMsg(nil)
 		if err != nil {
 			slog.Error("could not encode message", "error", err.Error(), "msg", broadcastMsg)
 		}
 		srv.broadcastUDP(b)
-	}
 
-	if needsUnmarshal {
-		_, err := clMsg.UnmarshalMsg(msg.B)
+	case messages.ClMsgInGameCommand:
+		command := game.Command{}
+		_, err := command.UnmarshalMsg(msg.B)
 		if err != nil {
 			return err
 		}
-	}
+		srv.game.AddCommand(command)
 
-	switch msg.T {
-	case messages.ClMsgHello:
-		slog.Info("new UDP client", "ID", c.ID, "IP", c.udpAddr.IP.String())
-	case messages.ClMsgJoinGame:
-		return srv.join(c, clMsg.(*messages.JoinGameMsg))
-	case messages.ClMsgMove:
-		return srv.move(c, clMsg.(*messages.MoveMsg))
-	case messages.ClMsgRotate:
-		return srv.rotate(c, clMsg.(*messages.RotateMsg))
-	case messages.ClMsgTeleport:
-		return srv.teleport(c)
-	case messages.ClMsgBlink:
-		return srv.blink(c)
-	case messages.ClMsgHook:
-		return srv.hook(c)
-	case messages.ClMsgBoost:
-		return srv.boost(c, clMsg.(*messages.BoostMsg))
-	case messages.ClMsgBrake:
-		return srv.brake(c)
+		broadcastMsg := messages.New(msg.T, command)
+		b, err := broadcastMsg.MarshalMsg(nil)
+		if err != nil {
+			slog.Error("could not encode message", "error", err.Error(), "msg", broadcastMsg)
+		}
+		srv.broadcastUDP(b)
+
 	default:
 		return nil
 	}
@@ -179,51 +151,17 @@ func (srv *server) join(c *srvClient, msg *messages.JoinGameMsg) error {
 			break
 		}
 	}
-	srv.game.AddPlayer(c.Player)
+	srv.game.Join(c.Player)
+
 	if err := c.sendTCPWithBody(messages.SrvMsgYouJoined, srv.game); err != nil {
 		return err
 	}
-	for _, p := range srv.game.Players {
+	for _, p := range srv.clients {
 		if p.ID != c.ID {
 			if err := srv.clients[p.ID].sendTCPWithBody(messages.SrvMsgPlayerJoined, c.Player); err != nil {
 				slog.Info("could not send joined player", "joinedID", c.ID, "targetID", p.ID)
 			}
 		}
 	}
-	return nil
-}
-
-func (srv *server) move(c *srvClient, msg *messages.MoveMsg) error {
-	c.HandleMove(msg.Dir)
-	return nil
-}
-
-func (srv *server) rotate(c *srvClient, msg *messages.RotateMsg) error {
-	c.HandleRotate(msg.Dir)
-	return nil
-}
-
-func (srv *server) teleport(c *srvClient) error {
-	srv.game.PortalNetwork.Teleport(srv.game.Players[c.ID])
-	return nil
-}
-
-func (srv *server) blink(c *srvClient) error {
-	c.HandleBlink()
-	return nil
-}
-
-func (srv *server) hook(c *srvClient) error {
-	c.UseHook()
-	return nil
-}
-
-func (srv *server) brake(c *srvClient) error {
-	c.Brake()
-	return nil
-}
-
-func (srv *server) boost(c *srvClient, msg *messages.BoostMsg) error {
-	c.HandleBoost(msg.Boosting)
 	return nil
 }
