@@ -13,7 +13,7 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/messages"
+	"wars/messages"
 )
 
 func (c *gameClient) openTCPConnection() {

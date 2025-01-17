@@ -13,8 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"wars/lib/colors"
-	"wars/lib/game"
+	"wars/game"
 )
 
 const lineSpacing = 1.1
@@ -39,11 +38,12 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 	case screenMain:
 		c.drawMain(screen)
 	case screenGame:
+		c.moveCamera()
 		c.drawGame(screen)
-		if p, ok := c.game.Players[c.clientID]; ok {
+		if p, ok := c.game.State.Players[c.clientID]; ok {
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0,
 				c.windowH-20)
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Length()), 0, c.windowH-40)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Magnitude()), 0, c.windowH-40)
 		}
 	default:
 	}
@@ -51,7 +51,6 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()), 0, 0)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()), 0, 20)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ping: %d", c.ping.Milliseconds()), 0, 40)
-
 }
 
 func (c *gameClient) drawMain(screen *ebiten.Image) {
@@ -61,7 +60,7 @@ func (c *gameClient) drawMain(screen *ebiten.Image) {
 	op := &text.DrawOptions{}
 	op.LineSpacing = lineSpacing
 	op.GeoM.Translate(middleW-textW, middleH-textH)
-	op.ColorScale.ScaleWithColor(colors.White.ToColorRGBA())
+	op.ColorScale.ScaleWithColor(game.ColorWhite.ToColorRGBA())
 	text.Draw(screen, label, FontFace22, op)
 	c.nameInput.Draw(screen)
 }
@@ -81,7 +80,7 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 }
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
-	for _, p := range c.game.Players {
+	for _, p := range c.game.State.Players {
 		playerImages, ok := c.playerImages[p.ID]
 		if !ok {
 			continue
@@ -97,8 +96,9 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 		textW, textH := text.Measure(nameStr, FontFaceBold18, lineSpacing)
 
 		isDead := p.Status == game.PlayerStatusDead
-		timeSinceDeath := time.Since(p.DeadAt).Seconds()
+		var timeSinceDeath float64
 		if isDead {
+			timeSinceDeath = time.Since(*p.DeadAt).Seconds()
 			if timeSinceDeath > 1 {
 				continue
 			}
@@ -127,7 +127,7 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			}
 			if p.Blinking {
 				var alpha float32
-				progress := time.Since(p.BlinkedAt).Seconds() / game.BlinkDuration
+				progress := time.Since(*p.BlinkedAt).Seconds() / game.BlinkDuration
 				if progress < 0.5 {
 					alpha = float32(1 - 2*progress)
 				} else {
@@ -137,7 +137,7 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			}
 			if p.Teleporting {
 				var alpha float32
-				progress := time.Since(p.TeleportedAt).Seconds() / game.TeleportDuration
+				progress := time.Since(*p.TeleportedAt).Seconds() / game.TeleportDuration
 				if progress < 0.5 {
 					alpha = float32(1 - 2*progress)
 				} else {
@@ -169,7 +169,7 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 			hookOp.GeoM.Scale(hookLength, 1)
 			angle := p.Angle
 			if p.Hook.Stuck {
-				angle = math.Atan2(p.Hook.End.Y-p.Position.Y, p.Hook.End.X-p.Position.X)
+				angle = math.Atan2(p.Hook.EndPosition.Y-p.Position.Y, p.Hook.EndPosition.X-p.Position.X)
 			}
 			hookOp.GeoM.Rotate(angle)
 			hookOp.GeoM.Translate(p.Position.X-c.cameraX, p.Position.Y-c.cameraY)
@@ -179,27 +179,30 @@ func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 }
 
 func (c *gameClient) drawPortals(screen *ebiten.Image) {
-	for _, p := range c.game.PortalNetwork.Portals {
+	for _, p := range c.game.State.PortalNetwork.Portals {
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(p.Pos.X-game.PortalRadius-c.cameraX, p.Pos.Y-game.PortalRadius-c.cameraY)
+		op.GeoM.Translate(p.Position.X-game.PortalRadius-c.cameraX, p.Position.Y-game.PortalRadius-c.cameraY)
 
 		img := c.portalStaticImg
-		t := time.Since(p.LastUsedAt).Seconds()
-		if t <= 1.0 {
-			img = c.portalAnimations[p.ID].Image()
+		if p.LastUsedAt != nil {
+			t := time.Since(*p.LastUsedAt).Seconds()
+			if t <= 1.0 {
+				img = c.portalAnimations[p.ID].Image()
+			}
 		}
+
 		screen.DrawImage(img, op)
-		player := c.game.Players[c.clientID]
+		player := c.game.State.Players[c.clientID]
 		if !player.Teleporting {
-			canUse, portal, _ := c.game.PortalNetwork.CanUsePortal(player)
+			canUse, portal, _ := c.game.State.PortalNetwork.CanUsePortal(player)
 			if portal != nil && portal.ID == p.ID {
 				clr := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 				if !canUse {
 					clr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
 				}
 				vector.StrokeCircle(screen,
-					float32(portal.Pos.X-c.cameraX),
-					float32(portal.Pos.Y-c.cameraY),
+					float32(portal.Position.X-c.cameraX),
+					float32(portal.Position.Y-c.cameraY),
 					game.PortalRadius-5,
 					1, clr, true,
 				)
@@ -209,11 +212,11 @@ func (c *gameClient) drawPortals(screen *ebiten.Image) {
 }
 
 func (c *gameClient) drawBricks() {
-	for _, brick := range c.game.Bricks {
+	for _, brick := range c.game.State.Bricks {
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(-brick.W/2, -brick.H/2)
-		op.GeoM.Rotate(brick.A)
-		op.GeoM.Translate(brick.Pos.X+brick.W/2, brick.Pos.Y+brick.H/2)
+		op.GeoM.Translate(-brick.Width/2, -brick.Height/2)
+		op.GeoM.Rotate(brick.Angle)
+		op.GeoM.Translate(brick.Position.X+brick.Width/2, brick.Position.Y+brick.Height/2)
 
 		img := c.brickImg
 		c.worldImg.DrawImage(img, op)
@@ -222,7 +225,7 @@ func (c *gameClient) drawBricks() {
 
 func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 	sorted := make([]*game.Player, 0)
-	for v := range maps.Values(c.game.Players) {
+	for v := range maps.Values(c.game.State.Players) {
 		sorted = append(sorted, v)
 	}
 	sort.SliceStable(sorted, func(i, j int) bool {
@@ -232,14 +235,14 @@ func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 		if sorted[i].Deaths != sorted[j].Deaths {
 			return sorted[i].Deaths < sorted[j].Deaths
 		}
-		return sorted[i].JoinedAt.Before(sorted[j].JoinedAt)
+		return sorted[i].JoinedAt.Before(*sorted[j].JoinedAt)
 
 	})
 
 	i := 0
 	for _, player := range sorted {
 		playerStr := fmt.Sprintf("%s | %d | %d | %dm", player.Name, player.Kills, player.Deaths,
-			int(time.Since(player.JoinedAt).Minutes()))
+			int(time.Since(*player.JoinedAt).Minutes()))
 		textW, textH := text.Measure(playerStr, FontFace18, lineSpacing)
 		op := &text.DrawOptions{}
 		op.LineSpacing = lineSpacing
@@ -251,26 +254,30 @@ func (c *gameClient) drawPlayerList(screen *ebiten.Image) {
 }
 
 func (c *gameClient) drawSpells(screen *ebiten.Image) {
-	p := c.game.Players[c.clientID]
+	p := c.game.State.Players[c.clientID]
 
 	blinkText := "Blink: Space"
 	hookText := "Hook: Q"
 	portalText := "Portal: E"
 	brakeText := "Brake: Shift"
 
-	_, _, cooldown := c.game.PortalNetwork.CanUsePortal(p)
+	_, _, cooldown := c.game.State.PortalNetwork.CanUsePortal(p)
 	if cooldown != nil && cooldown.Seconds() < game.PortalCooldown {
 		portalText = fmt.Sprintf("Portal: %ds", int(game.PortalCooldown-cooldown.Seconds()))
 	}
 
-	blinksUsedTime := time.Since(p.BlinkedAt).Seconds()
-	if blinksUsedTime < game.BlinkCooldown {
-		blinkText = fmt.Sprintf("Blink:  %ds", int(game.BlinkCooldown-blinksUsedTime))
+	if p.BlinkedAt != nil {
+		lastUsed := time.Since(*p.BlinkedAt).Seconds()
+		if lastUsed < game.BlinkCooldown {
+			blinkText = fmt.Sprintf("Blink:  %ds", int(game.BlinkCooldown-lastUsed))
+		}
 	}
 
-	hookUsedTime := time.Since(p.HookedAt).Seconds()
-	if hookUsedTime < game.HookCooldown {
-		hookText = fmt.Sprintf("Hook: %ds", int(game.HookCooldown-hookUsedTime))
+	if p.UsedHookAt != nil {
+		lastUsed := time.Since(*p.UsedHookAt).Seconds()
+		if lastUsed < game.HookCooldown {
+			hookText = fmt.Sprintf("Hook: %ds", int(game.HookCooldown-lastUsed))
+		}
 	}
 
 	combined := fmt.Sprintf("%s\t%s\t%s\t%s", hookText, blinkText, portalText, brakeText)

@@ -10,8 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
-	"wars/lib/colors"
-	"wars/lib/game"
+	"wars/game"
 )
 
 var (
@@ -225,13 +224,13 @@ func drawEyes(img *ebiten.Image, cx, cy float32) {
 
 func (c *gameClient) createPortalsAnimations() {
 	c.portalAnimations = map[string]*Animation{}
-	for _, portal := range c.game.PortalNetwork.Portals {
+	for _, portal := range c.game.State.PortalNetwork.Portals {
 		c.portalAnimations[portal.ID] =
 			&Animation{Frames: portalSprites, AnimationSpeed: 0.6, img: portalSprites[0], Reversed: true}
 	}
 }
 
-func (c *gameClient) createChain(screen *ebiten.Image, color colors.RGBA) {
+func (c *gameClient) createChain(screen *ebiten.Image, color *game.RGBA) {
 
 	linkRadius := 2.0
 	linkDistance := 3.0 + linkRadius*2

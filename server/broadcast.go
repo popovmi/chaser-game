@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"log/slog"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"wars/game"
+	"wars/messages"
 )
 
 func (srv *server) broadcastState() {
@@ -13,9 +13,9 @@ func (srv *server) broadcastState() {
 	msg := messages.New(
 		messages.SrvMsgGameState,
 		&messages.GameStateMsg{
-			Game: &game.Game{
-				Players:       srv.game.Players,
-				PortalNetwork: srv.game.PortalNetwork.Short(),
+			State: &game.State{
+				Players:       srv.game.State.Players,
+				PortalNetwork: srv.game.State.PortalNetwork.Short(),
 			},
 		},
 	)
@@ -30,11 +30,11 @@ func (srv *server) broadcastState() {
 }
 
 func (srv *server) broadcastUDP(b []byte) {
-	for _, player := range srv.game.Players {
+	for _, client := range srv.clients {
 		go func() {
-			err := srv.clients[player.ID].sendUDPBytes(b)
+			err := client.sendUDPBytes(b)
 			if err != nil {
-				slog.Error("could not broadcast UDP packet to client", "clientID", player.ID, "error", err.Error())
+				slog.Error("could not broadcast UDP packet to client", "clientID", client.ID, "error", err.Error())
 			}
 		}()
 	}
@@ -46,11 +46,11 @@ func (srv *server) broadcastTCP(b []byte) {
 	binary.BigEndian.PutUint32(buf[:4], size)
 	copy(buf[4:], b)
 
-	for _, player := range srv.game.Players {
+	for _, client := range srv.clients {
 		go func() {
-			err := srv.clients[player.ID].sendTCPBytes(buf)
+			err := client.sendTCPBytes(buf)
 			if err != nil {
-				slog.Error("could not broadcast TCP packet to client", "clientID", player.ID, "error", err.Error())
+				slog.Error("could not broadcast TCP packet to client", "clientID", client.ID, "error", err.Error())
 			}
 		}()
 	}

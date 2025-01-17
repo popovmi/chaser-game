@@ -8,6 +8,9 @@ const (
 
 	Radius = 30
 
+	BrickWidth  = 200
+	BrickHeight = 40
+
 	PortalRadius     = 75
 	TeleportDuration = 0.8
 	PortalCooldown   = 3.0 + TeleportDuration

@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
-	github.com/matoous/go-nanoid/v2 v2.1.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/tinylib/msgp v1.2.5
 )
 

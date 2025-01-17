@@ -3,7 +3,7 @@ package messages
 import (
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/game"
+	"wars/game"
 )
 
 //go:generate msgp
@@ -20,13 +20,8 @@ const (
 	ClMsgHello
 	ClMsgPing
 	ClMsgJoinGame
-	ClMsgMove
-	ClMsgRotate
-	ClMsgBrake
-	ClMsgTeleport
-	ClMsgBlink
-	ClMsgHook
-	ClMsgBoost
+	ClMsgInGameCommand
+	ClMsgInGameCommandPack
 )
 
 type Message struct {
@@ -52,9 +47,6 @@ func UDP(t MessageType, id string, data msgp.Marshaler) *ClientMessage {
 	return &ClientMessage{Message: *m, ID: id}
 }
 
-type Empty struct {
-}
-
 type YourIDMsg struct {
 	ID string `msg:"id"`
 }
@@ -63,18 +55,8 @@ type JoinGameMsg struct {
 	Name string `msg:"name"`
 }
 
-type MoveMsg struct {
-	Dir string `msg:"dir"`
-}
-
-type RotateMsg struct {
-	Dir game.Direction `msg:"dir"`
-}
-
-type BoostMsg struct {
-	Boosting bool `msg:"boosting"`
-}
-
 type GameStateMsg struct {
-	Game *game.Game `msg:"g"`
+	State *game.State `msg:"s"`
 }
+
+type Empty struct{}

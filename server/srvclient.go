@@ -8,8 +8,8 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"wars/lib/game"
-	"wars/lib/messages"
+	"wars/game"
+	"wars/messages"
 )
 
 type srvClient struct {

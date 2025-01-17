@@ -1,4 +1,4 @@
-package colors
+package game
 
 import (
 	"fmt"
