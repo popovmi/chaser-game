@@ -130,12 +130,13 @@ func (g *Game) update(dt float64) {
 }
 
 func (g *Game) spawn(player *Player) {
-	player.mu.Lock()
 	t := time.Now()
+	player.mu.Lock()
 	player.Status = PlayerStatusAlive
 	player.SpawnedAt = &t
 	player.HP = MaxHP
+	player.Position = NewVector(FieldWidth/2, FieldHeight/2)
+	player.Velocity = NewVector(0, 0)
 	player.mu.Unlock()
-
 	g.events <- Event{EventActionSpawned, player}
 }

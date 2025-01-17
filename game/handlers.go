@@ -8,8 +8,6 @@ import (
 func (g *Game) Join(player *Player) {
 	player.mu.Lock()
 	t := time.Now()
-	player.Position = NewVector(FieldWidth/2, FieldHeight/2)
-	player.Velocity = NewVector(0, 0)
 	player.Status = PlayerStatusPreparing
 	player.JoinedAt = &t
 	player.mu.Unlock()

@@ -29,7 +29,7 @@ const (
 	BrickElasticity = 0.6
 
 	blinkDistance = 500
-	BlinkDuration = 0.4
+	BlinkDuration = 0.6
 	BlinkCooldown = 2.0 + BlinkDuration
 
 	HookCooldown         = 2.0

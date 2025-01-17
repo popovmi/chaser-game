@@ -41,7 +41,7 @@ func newPortalNetwork(portals map[string]*Portal, links map[string]*PortalLink) 
 }
 
 func (pn *PortalNetwork) CanUsePortal(player *Player) (bool, *Portal, *time.Duration) {
-	if player.HookedBy != "" {
+	if player.Status == PlayerStatusPreparing || player.HookedBy != "" {
 		return false, nil, nil
 	}
 	var portal *Portal

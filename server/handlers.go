@@ -97,6 +97,7 @@ func (srv *server) handleMessage(c *srvClient, msg messages.Message) error {
 		if err != nil {
 			return err
 		}
+		slog.Debug("got command pack", "playerID", c.ID, "commands", commands)
 		srv.game.AddCommands(commands)
 		broadcastMsg := messages.New(msg.T, commands)
 		b, err := broadcastMsg.MarshalMsg(nil)
