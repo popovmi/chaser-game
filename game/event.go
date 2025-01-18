@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"log/slog"
-	"sync"
 )
 
 //go:generate msgp
@@ -21,6 +20,9 @@ const (
 	EventActionHooked
 	EventActionReturnedHook
 	EventActionBoosted
+	EventActionWallCollide
+	EventActionPlayerCollide
+	EventActionPortalUsed
 )
 
 func (ea EventAction) String() string {
@@ -45,6 +47,12 @@ func (ea EventAction) String() string {
 		return "ReturnedHook"
 	case EventActionBoosted:
 		return "Boosted"
+	case EventActionPlayerCollide:
+		return "PlayerCollide"
+	case EventActionPortalUsed:
+		return "PortalUsed"
+	case EventActionWallCollide:
+		return "WallCollide"
 	default:
 		return fmt.Sprintf("Unknown(%d)", ea)
 	}
@@ -59,10 +67,16 @@ type Event struct {
 	Payload interface{} `msg:"pld,omitempty" json:"Payload,omitempty"`
 }
 
+type EventListener interface {
+	ListenerID() string
+	Chan() chan Event
+	Listen(chan struct{})
+}
+
 func (g *Game) AppendListener(l EventListener) {
 	g.lmu.Lock()
 	defer g.lmu.Unlock()
-	g.listeners[l.ID()] = l
+	g.listeners[l.ListenerID()] = l
 	go l.Listen(g.stop)
 }
 
@@ -80,15 +94,11 @@ func (g *Game) publishEvents() {
 
 			g.lmu.Lock()
 			slog.Debug("publish event", "event", event)
-			wg := sync.WaitGroup{}
-			wg.Add(len(g.listeners))
+
 			for _, l := range g.listeners {
-				go func() {
-					l.Chan() <- event
-					wg.Done()
-				}()
+				l.Chan() <- event
 			}
-			wg.Wait()
+
 			g.lmu.Unlock()
 
 		case <-g.stop:

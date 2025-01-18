@@ -1,6 +1,7 @@
 package game
 
 import (
+	"log/slog"
 	"math"
 	"time"
 )
@@ -50,8 +51,14 @@ func (g *Game) handlePlayerBrake(player *Player) {
 
 func (g *Game) handlePlayerTeleport(player *Player) {
 	player.mu.Lock()
-	ported := g.State.PortalNetwork.teleport(player)
-	player.mu.Unlock()
+	defer player.mu.Unlock()
+	can, fromPortal, _ := g.State.PortalNetwork.CanUsePortal(player)
+	if !can {
+		return
+	}
+	slog.Debug("publish event")
+	g.events <- Event{EventActionPortalUsed, player}
+	ported := g.State.PortalNetwork.teleport(player, fromPortal)
 	if ported {
 		g.events <- Event{EventActionTeleported, player.ID}
 	}

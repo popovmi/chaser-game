@@ -66,14 +66,10 @@ func (pn *PortalNetwork) CanUsePortal(player *Player) (bool, *Portal, *time.Dura
 	return true, portal, nil
 }
 
-func (pn *PortalNetwork) teleport(player *Player) bool {
+func (pn *PortalNetwork) teleport(player *Player, fromPortal *Portal) bool {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
 
-	can, fromPortal, _ := pn.CanUsePortal(player)
-	if !can {
-		return false
-	}
 	link := pn.Links[fromPortal.LinkID]
 	for _, toPortalID := range link.PortalIDs {
 		if toPortalID != fromPortal.ID {

@@ -68,7 +68,7 @@ func (l *listener) Listen(stop chan struct{}) {
 	}
 }
 
-func (l listener) ID() string {
+func (l listener) ListenerID() string {
 	return l.id
 }
 

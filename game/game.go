@@ -8,12 +8,6 @@ import (
 
 //go:generate msgp
 
-type EventListener interface {
-	ID() string
-	Chan() chan Event
-	Listen(chan struct{})
-}
-
 type Game struct {
 	State *State `msg:"s" json:"State"`
 

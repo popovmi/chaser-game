@@ -118,12 +118,16 @@ func (g *Game) update(dt float64) {
 			if k1 < k2 && p1.Touchable() && p2.Touchable() {
 				if p1.touchingPlayer(p2) {
 					p2.mu.Lock()
+					g.events <- Event{Action: EventActionPlayerCollide, Payload: []string{p1.ID, p2.ID}}
 					p1.collidePlayer(p2)
 					p2.mu.Unlock()
 				}
 			}
 		}
-		p1.collideWall()
+		wallHit := p1.collideWall()
+		if wallHit {
+			g.events <- Event{Action: EventActionWallCollide, Payload: p1}
+		}
 		p1.mu.Unlock()
 	}
 	slog.Debug("state updated", "time", time.Since(g.LastTick).Milliseconds())

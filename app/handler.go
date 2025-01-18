@@ -43,7 +43,7 @@ func (c *gameClient) handleMessage(msg *messages.Message, expired bool) error {
 		if err != nil {
 			return err
 		}
-		slog.Info("got commands: ", commands)
+		slog.Debug("got commands: ", commands)
 		for _, command := range commands {
 			if command.PlayerID != c.clientID {
 				c.game.AddCommand(command)
