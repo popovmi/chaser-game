@@ -64,7 +64,7 @@ func main() {
 	flag.Parse()
 
 	lvl := new(slog.LevelVar)
-	lvl.Set(slog.LevelInfo)
+	lvl.Set(slog.LevelDebug)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
 	slog.SetDefault(logger)
 

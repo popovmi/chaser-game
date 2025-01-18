@@ -41,7 +41,7 @@ func newPortalNetwork(portals map[string]*Portal, links map[string]*PortalLink) 
 }
 
 func (pn *PortalNetwork) CanUsePortal(player *Player) (bool, *Portal, *time.Duration) {
-	if player.HookedBy != "" {
+	if player.Status == PlayerStatusPreparing || player.HookedBy != "" {
 		return false, nil, nil
 	}
 	var portal *Portal
@@ -66,14 +66,10 @@ func (pn *PortalNetwork) CanUsePortal(player *Player) (bool, *Portal, *time.Dura
 	return true, portal, nil
 }
 
-func (pn *PortalNetwork) teleport(player *Player) bool {
+func (pn *PortalNetwork) teleport(player *Player, fromPortal *Portal) bool {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
 
-	can, fromPortal, _ := pn.CanUsePortal(player)
-	if !can {
-		return false
-	}
 	link := pn.Links[fromPortal.LinkID]
 	for _, toPortalID := range link.PortalIDs {
 		if toPortalID != fromPortal.ID {

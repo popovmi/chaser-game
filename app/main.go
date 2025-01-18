@@ -102,6 +102,7 @@ func main() {
 	}
 
 	c.createDefaultImages()
+	c.game.AppendListener(c.audio)
 
 	go c.openTCPConnection()
 	defer func() {

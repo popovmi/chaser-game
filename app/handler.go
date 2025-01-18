@@ -37,6 +37,19 @@ func (c *gameClient) handleMessage(msg *messages.Message, expired bool) error {
 			c.game.AddCommand(command)
 		}
 		return nil
+	case messages.ClMsgInGameCommandPack:
+		commands := game.Commands{}
+		_, err := commands.UnmarshalMsg(msg.B)
+		if err != nil {
+			return err
+		}
+		slog.Debug("got commands: ", commands)
+		for _, command := range commands {
+			if command.PlayerID != c.clientID {
+				c.game.AddCommand(command)
+			}
+		}
+		return nil
 	default:
 	}
 

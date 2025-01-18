@@ -9,6 +9,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
+
+	"wars/game"
 )
 
 var (
@@ -62,13 +64,33 @@ func (s *gameSound) play(pId string) {
 	s.playsByPlayer[pId] = now
 }
 
+func (s *gameSound) plays(ids []string) {
+	now := time.Now().UnixMilli()
+	shouldPlay := false
+	for _, id := range ids {
+		if lastPlayed, ok := s.playsByPlayer[id]; !ok || now-lastPlayed >= 750 {
+			s.playsByPlayer[id] = now
+			shouldPlay = true
+		}
+	}
+	if !shouldPlay {
+		return
+	}
+	err := s.player.Rewind()
+	if err != nil {
+		slog.Error("Could not rewind sound", "error", err.Error())
+		return
+	}
+	s.player.Play()
+
+}
+
 type music struct {
 	audioContext *audio.Context
 	wallHit      *gameSound
 	portal       *gameSound
 	touch        *gameSound
-
-	mu sync.Mutex
+	events       chan game.Event
 }
 
 func newGameMusic() *music {
@@ -79,6 +101,7 @@ func newGameMusic() *music {
 		wallHit:      newGameSound(audioContext, 0.2, SoundWallOGG),
 		portal:       newGameSound(audioContext, 1, SoundPortalOGG),
 		touch:        newGameSound(audioContext, 0.1, SoundTouchOGG),
+		events:       make(chan game.Event),
 	}
 }
 
@@ -89,4 +112,42 @@ func (m *music) playPortal() {
 		return
 	}
 	m.portal.player.Play()
+}
+
+func (m *music) ListenerID() string {
+	return "music"
+}
+
+func (m *music) Chan() chan game.Event {
+	return m.events
+}
+
+func (m *music) Listen(stop chan struct{}) {
+	for {
+		select {
+		case e, ok := <-m.events:
+			if !ok {
+				return
+			}
+			m.handleGameEvent(e)
+		case <-stop:
+			return
+		}
+	}
+}
+
+func (m *music) handleGameEvent(event game.Event) {
+
+	switch event.Action {
+	case game.EventActionPortalUsed:
+		m.playPortal()
+	case game.EventActionWallCollide:
+		p := event.Payload.(*game.Player)
+		m.wallHit.play(p.ID)
+	case game.EventActionPlayerCollide:
+		ids := event.Payload.([]string)
+		m.touch.plays(ids)
+	default:
+
+	}
 }

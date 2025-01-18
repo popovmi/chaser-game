@@ -38,11 +38,11 @@ func (c *gameClient) Draw(screen *ebiten.Image) {
 	case screenMain:
 		c.drawMain(screen)
 	case screenGame:
-		c.moveCamera()
+		c.translateCamera()
 		c.drawGame(screen)
-		if p, ok := c.game.State.Players[c.clientID]; ok {
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0,
-				c.windowH-20)
+		if p, ok := c.game.State.Players[c.clientID]; ok && p.Position != nil {
+			ebitenutil.DebugPrintAt(
+				screen, fmt.Sprintf("X: %0.2f, Y: %0.2f", p.Position.X, p.Position.Y), 0, c.windowH-20)
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Speed: %0.2f", p.Velocity.Magnitude()), 0, c.windowH-40)
 		}
 	default:
@@ -81,6 +81,9 @@ func (c *gameClient) drawWorld(screen *ebiten.Image) {
 
 func (c *gameClient) drawPlayers(screen *ebiten.Image) {
 	for _, p := range c.game.State.Players {
+		if p.Status == game.PlayerStatusPreparing {
+			continue
+		}
 		playerImages, ok := c.playerImages[p.ID]
 		if !ok {
 			continue

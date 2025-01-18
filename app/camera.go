@@ -6,54 +6,74 @@ import (
 	"wars/game"
 )
 
-func (c *gameClient) moveCamera() {
+func (c *gameClient) translateCamera() {
 	p, ok := c.game.State.Players[c.clientID]
 
-	if ok && c.windowW < game.FieldWidth+100 {
-		if p.Status == game.PlayerStatusDead {
+	if !ok {
+		c.cameraX = 0
+		c.cameraY = 0
+		return
+	}
+
+	halfScreenWidth := float64(c.windowW) / 2
+	halfFieldWidth := float64(game.FieldWidth) / 2
+	screenCenterX := halfFieldWidth - halfScreenWidth
+	minX := float64(-50)
+	maxX := float64(game.FieldWidth-c.windowW) + 50
+
+	if c.windowW < game.FieldWidth+100 {
+		if p.Status == game.PlayerStatusPreparing {
+			c.cameraX = screenCenterX
+		} else if p.Status == game.PlayerStatusDead {
+			deathPosSubX := p.DeathPosition.X - halfFieldWidth
 			timeSinceDeath := time.Since(*p.DeadAt).Seconds()
-			if timeSinceDeath > 0.5 {
-				screenCenterX := float64(game.FieldWidth)/2 - float64(c.windowW)/2
-				t := (timeSinceDeath - 0.5) / 2.0 // 1.0 - время интерполяции
+			if timeSinceDeath <= 0.5 {
+				c.cameraX = clamp(deathPosSubX, minX, maxX)
+			} else {
+				t := (timeSinceDeath - 0.5) / 2.0
 				if t > 1.0 {
 					t = 1.0
 				}
-				targetX := clamp(p.DeathPosition.X-float64(c.windowW)/2, -50, float64(game.FieldWidth-c.windowW)+50)
+				targetX := clamp(deathPosSubX, minX, maxX)
 				c.cameraX = lerp(targetX, screenCenterX, t)
-			} else {
-				targetX := p.DeathPosition.X - float64(c.windowW)/2
-				c.cameraX = clamp(targetX, -50, float64(game.FieldWidth-c.windowW)+50)
 			}
 		} else {
-			targetX := p.Position.X - float64(c.windowW)/2
-			targetX = clamp(targetX, -50, float64(game.FieldWidth-c.windowW)+50)
+			targetX := p.Position.X - halfScreenWidth
+			targetX = clamp(targetX, minX, maxX)
+			//c.cameraX = lerp(c.cameraX, targetX, factor) // как правильно
 			c.cameraX = targetX
-			//c.cameraX = lerp(c.cameraX, targetX, 0.9)
 		}
 	} else {
 		c.cameraX = 0
 	}
 
-	if ok && c.windowH < game.FieldHeight+100 {
-		if p.Status == game.PlayerStatusDead {
+	halfScreenHeight := float64(c.windowH) / 2
+	halfFieldHeight := float64(game.FieldHeight) / 2
+	screenCenterY := halfFieldHeight - halfScreenHeight
+	minY := float64(-50)
+	maxY := float64(game.FieldHeight-c.windowH) + 50
+
+	if c.windowH < game.FieldHeight+100 {
+		if p.Status == game.PlayerStatusPreparing {
+			c.cameraY = screenCenterY
+		} else if p.Status == game.PlayerStatusDead {
+			deathPosY := p.DeathPosition.Y - halfScreenHeight
 			timeSinceDeath := time.Since(*p.DeadAt).Seconds()
-			if timeSinceDeath > 0.5 {
-				screenCenterY := float64(game.FieldHeight)/2 - float64(c.windowH)/2
-				t := (timeSinceDeath - 0.5) / 1.0 // 1.0 - время интерполяции
+			if timeSinceDeath <= 0.5 {
+				c.cameraY = clamp(deathPosY, minY, maxY)
+			} else {
+				t := (timeSinceDeath - 0.5) / 2.0
 				if t > 1.0 {
 					t = 1.0
 				}
-				targetY := clamp(p.DeathPosition.Y-float64(c.windowH)/2, -50, float64(game.FieldHeight-c.windowH)+50)
+				targetY := clamp(deathPosY, minY, maxY)
 				c.cameraY = lerp(targetY, screenCenterY, t)
-			} else {
-				targetY := p.DeathPosition.Y - float64(c.windowH)/2
-				c.cameraY = clamp(targetY, -50, float64(game.FieldHeight-c.windowH)+50)
 			}
 		} else {
-			targetY := p.Position.Y - float64(c.windowH)/2
-			targetY = clamp(targetY, -50, float64(game.FieldHeight-c.windowH)+50)
+			targetY := p.Position.Y - halfScreenHeight
+			targetY = clamp(targetY, minY, maxY)
+			//c.cameraY = lerp(c.cameraY, targetY, factor) // как правильно
 			c.cameraY = targetY
-			//c.cameraY = lerp(c.cameraY, targetY, 0.9)
 		}
 	} else {
 		c.cameraY = 0
